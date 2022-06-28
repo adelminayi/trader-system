@@ -1,0 +1,11 @@
+{% extends "account/email/base_message.txt" %}
+{% load account %}
+
+{% block content %}
+{% autoescape off %}
+
+This is your confirmation code for Jirnal trading system:
+{{ key }}
+
+{% endautoescape %}
+{% endblock %}

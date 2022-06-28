@@ -1,0 +1,62 @@
+version: "3.7"
+
+services:
+
+  web:
+    build: "./app"
+    #container_name: "usersdev2"
+    restart: "always"
+    ports:
+      - "8010:8000"
+    volumes:
+      - ./volumes/app:/app
+      - ./volumes/static:/static
+      - ./volumes/media:/media
+    links:
+      - redis:redis
+    networks:
+      - web_network
+      - nginx_network
+      - redis_network
+    env_file:
+      - "./.env"
+    depends_on:
+      - "redis"
+
+  nginx:
+    build: "./nginx"
+    container_name: "usersdev2_nginx"
+    restart: "always"
+    ports:
+      - "5101:80"
+    volumes:
+      - ./volumes/static:/static
+      - ./volumes/media:/media
+    networks:
+      - nginx_network
+    depends_on:
+      - "web"
+
+  redis:
+    image: redis:alpine
+    container_name: "usersdev2_redis"
+    restart: always
+    expose:
+      - "6379"
+    command: redis-server --save 20 1 --loglevel warning --requirepass usBVG6a4SdeVWDM2kTuj9yZ8vbMBr9679EpzY55LY&sF5eQu
+    volumes: 
+      - redis:/data
+    networks:
+      - redis_network
+
+volumes:
+  redis:
+    driver: local
+
+networks:
+  nginx_network:
+    external: True
+  web_network:
+    external: True
+  redis_network:
+    external: True

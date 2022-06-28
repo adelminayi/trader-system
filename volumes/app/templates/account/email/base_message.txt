@@ -1,0 +1,8 @@
+{% autoescape off %}
+Hello from my.jirnal.ir
+
+{% block content %}{% endblock %}
+
+Thank you for using my.jirnal.ir
+
+{% endautoescape %}

@@ -1,0 +1,27 @@
+apiKeyPermissionSchema = {
+    "type" : "object",
+    "properties" : {
+        "createTime"                    : {"type" : "number"},
+        "enableFutures"                 : {"type" : "boolean"},
+        "enableInternalTransfer"        : {"type" : "boolean"},
+        "enableMargin"                  : {"type" : "boolean"},
+        "enableReading"                 : {"type" : "boolean"},
+        "enableSpotAndMarginTrading"    : {"type" : "boolean"},
+        "enableVanillaOptions"          : {"type" : "boolean"},
+        "enableWithdrawals"             : {"type" : "boolean"},
+        "ipRestrict"                    : {"type" : "boolean"},
+        "permitsUniversalTransfer"      : {"type" : "boolean"},
+        "tradingAuthorityExpirationTime": {"type" : "number"},
+    },
+    "required": [
+        "createTime",
+        "enableFutures",
+        "enableInternalTransfer",
+        "enableMargin",
+        "enableReading",
+        "enableSpotAndMarginTrading",
+        "enableVanillaOptions",
+        "enableWithdrawals",
+        "ipRestrict",
+        "permitsUniversalTransfer"],
+}
