@@ -27,12 +27,11 @@ RUN pip install --no-cache-dir --default-timeout=500 -r requirements.txt
 
 #RUN apk del gcc python3-dev libffi-dev musl-dev
 
-CMD echo 31 && \
+CMD while ! python3 manage.py sqlflush > /dev/null 2>&1 ; do sleep 1 ; done && \
+    echo 'line 31' && \
     python3 manage.py migrate && \
-    echo 33 && \
+    echo 'line 33' && \
     python3 manage.py collectstatic && \
-    echo 35 && \
+    echo 'line 35' && \
     python3 manage.py createsuperuser_if_none_exists --user=amir --password=amir1374 --email=amirayat20@gmail.com; \
-    echo 37 && \
-    gunicorn -w 5 -b 0.0.0.0:8000 core.asgi:application -k uvicorn.workers.UvicornWorker && \
-    echo 39
+    gunicorn -w 5 -b 0.0.0.0:8000 core.asgi:application -k uvicorn.workers.UvicornWorker

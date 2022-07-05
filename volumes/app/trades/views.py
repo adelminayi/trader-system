@@ -195,19 +195,78 @@ class PNL(viewsets.GenericViewSet):
         fromTime    = request.query_params.get('from')
         toTime      = request.query_params.get('to')
         strategy    = request.query_params.get('strategy')
+        strat_id    = request.query_params.get('id')
 
         Qlist=[
             Q(profile__user__id=userId),
-            Q(symbol=symbol),
-            Q(time__gte=fromTime),
-            Q(time__lte=toTime),
-            Q(strategy__strategy=strategy),
+            # Q(symbol=symbol),
+            # Q(time__gte=fromTime),
+            # Q(time__lte=toTime),
+            # Q(strategy__strategy=strategy),
+            Q(strategy=strat_id),
         ]
+        # queryset1 = Trade.objects.filter(reduce(and_, [q for q in Qlist if q.children[0][1] is not None]))
+        queryset1 = Trade.objects.filter( Qlist[0] & Qlist[1])
+        queryset2 = queryset1.aggregate(pnl=Sum(F("realizedPnl")-F("commission")))
+        print(queryset1,'\n', len(queryset1))
+        return Response(queryset2, status=status.HTTP_200_OK)
 
-        queryset = Trade.objects.filter(reduce(and_, [q for q in Qlist if q.children[0][1] is not None]))\
-                            .aggregate(pnl=Sum(F("realizedPnl")-F("commission")))
-        
-        return Response(queryset, status=status.HTTP_200_OK)
+
+# class PNLRolling(generics.ListAPIView):
+#     """
+#     rolling pnl
+#     /trades/pnl/3600/?symbol=BTCUSDT&strategy=GAMMA&from=1644483626859&to=1644490326859
+#     """
+#     permission_classes  = (IsAuthenticated,)
+#     pagination_class    = None
+#     serializer_class    = PNLRollingSerializer
+
+#     def get_queryset(self):
+#         userId      = self.request.user.id
+#         symbol      = self.request.query_params.get('symbol')
+#         strategy    = self.request.query_params.get('strategy')
+#         fromTime    = self.request.query_params.get('from')
+#         toTime      = self.request.query_params.get('to')
+#         id          = self.request.query_params.get('id')
+
+#         l = [fromTime,toTime]
+
+#         for i in range(len(l)):
+#             if l[i] is not None:
+#                 if l[i].isdigit():
+#                     l[i] = int(l[i])
+#                 else:
+#                     raise APIException("invalid query parameters(from|to).")
+
+#         Qlist=[
+#             ~Q(realizedPnl = 0.0),
+#             Q(profile__user__id=userId),
+#             Q(strategy__strategy=strategy),
+#             Q(strategy__id=id),
+#             Q(symbol=symbol),
+#             Q(time__gte=l[0]),
+#             Q(time__lte=l[1]),
+#         ]
+
+#         return Trade.objects.filter(reduce(and_, [q for q in Qlist if q.children[0][1] is not None]))\
+#             .order_by("-time").values("time","realizedPnl","commission","strategy")
+
+#     def list(self, request, step):
+#         step = step+"S"
+#         df = pd.DataFrame(list(self.get_queryset()))
+            
+#         if len(df)!=0:
+#             df['time'] = pd.to_datetime(df['time'], unit='ms')
+#             df = df.set_index(['time'])
+#             # df = df.resample(step).sum().reset_index()
+#             df = df.resample(step).mean().ffill().reset_index()
+#             df['pnl'] = df['realizedPnl']-df['commission']
+#             df = df.drop(columns=["realizedPnl","commission"])
+#             df['time'] = df.time.values.astype(np.int64) // 10 ** 6
+#             data = df.to_dict("records")
+#             return Response(data, status=status.HTTP_200_OK)
+#         else:
+#             return Response([], status=status.HTTP_200_OK)
 
 
 class PNLRolling(generics.ListAPIView):
@@ -220,13 +279,14 @@ class PNLRolling(generics.ListAPIView):
     serializer_class    = PNLRollingSerializer
 
     def get_queryset(self):
+        queryset = Trade.objects.all()
         userId      = self.request.user.id
         symbol      = self.request.query_params.get('symbol')
         strategy    = self.request.query_params.get('strategy')
         fromTime    = self.request.query_params.get('from')
         toTime      = self.request.query_params.get('to')
         id          = self.request.query_params.get('id')
-
+        
         l = [fromTime,toTime]
 
         for i in range(len(l)):
@@ -234,10 +294,10 @@ class PNLRolling(generics.ListAPIView):
                 if l[i].isdigit():
                     l[i] = int(l[i])
                 else:
-                    raise APIException("invalid query parameters(from|to).")
+                    raise APIException("invalid query parameters (from|to).")
 
         Qlist=[
-            ~Q(realizedPnl = 0.0),
+            # ~Q(realizedPnl = 0.0),
             Q(profile__user__id=userId),
             Q(strategy__strategy=strategy),
             Q(strategy__id=id),
@@ -246,26 +306,52 @@ class PNLRolling(generics.ListAPIView):
             Q(time__lte=l[1]),
         ]
 
-        return Trade.objects.filter(reduce(and_, [q for q in Qlist if q.children[0][1] is not None]))\
-            .order_by("-time").values("time","realizedPnl","commission","strategy")
+        if fromTime is not None and toTime is not None:
+            queryset = queryset.filter(reduce(and_, [q for q in Qlist if q.children[0][1] is not None])).order_by("-time")
+        return queryset
+    
 
     def list(self, request, step):
-        step = step+"S"
-        df = pd.DataFrame(list(self.get_queryset()))
-            
-        if len(df)!=0:
-            df['time'] = pd.to_datetime(df['time'], unit='ms')
-            df = df.set_index(['time'])
-            # df = df.resample(step).sum().reset_index()
-            df = df.resample(step).mean().ffill().reset_index()
-            df['pnl'] = df['realizedPnl']-df['commission']
-            df = df.drop(columns=["realizedPnl","commission"])
-            df['time'] = df.time.values.astype(np.int64) // 10 ** 6
-            data = df.to_dict("records")
-            return Response(data, status=status.HTTP_200_OK)
+        data=(self.get_queryset())
+        fromTime = self.request.query_params.get('from')
+        toTime = self.request.query_params.get('to')
+        day_duration = 86400000
+        result = []
+        if fromTime is not None and toTime is not None:
+            '''
+            move fromTime to last second of that day, e.g.: 20:32:45 >> 23:59:59
+            move toTime to last second of that day, e.g.: 00:01:02 >> 23:59:59
+            '''
+            begin_day = (int(fromTime) - (int(fromTime) % day_duration)) + day_duration - 1
+            # if int(fromTime) > begin_day:
+            #     # if ts is midDay, move it to newDay ts
+            #     begin_day = begin_day + day_duration
+
+            end_day = (int(toTime) - (int(toTime) % day_duration)) + day_duration - 1
+
+            steps = int((end_day - begin_day) / day_duration) + 1
+
+            for i in range(steps):
+                start_step = begin_day + i * day_duration
+                end_step = start_step + day_duration
+                if end_step > int(toTime):
+                    # if ts is midDay, move ending ts to it
+                    end_step = int(toTime)
+                # print('start : {}  - end : {}'.format(start_step, end_step))
+                temp_data = data.filter(Q(time__gte= start_step) & Q(time__lte = end_step))
+                # print('temp_data.values()  : ', temp_data.values())
+                uniqe_startegy = list(set(x['strategy_id'] for x in temp_data.values('strategy_id')))
+                # print('uniqe_startegy:', uniqe_startegy)
+                for strat in uniqe_startegy:
+                    total_pnl = 0
+                    for item in temp_data.filter(strategy_id= strat).values():
+                        total_pnl += item['realizedPnl']- item['commission']
+                    result.append({'time': start_step, 'pnl': total_pnl, 'strategy':strat })
+                
+        if len(data) != 0:
+            return Response(result, status=status.HTTP_200_OK)
         else:
             return Response([], status=status.HTTP_200_OK)
-
 
 
 

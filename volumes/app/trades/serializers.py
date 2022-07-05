@@ -11,9 +11,14 @@ class TradeSerializer(serializers.ModelSerializer):
 class PNLSerializer(serializers.Serializer):
     pnl = serializers.FloatField()
 
-class PNLRollingSerializer(serializers.Serializer):
-    time = serializers.IntegerField()
-    pnl  = serializers.FloatField()
+# class PNLRollingSerializer(serializers.Serializer):
+#     time = serializers.IntegerField()
+#     pnl  = serializers.FloatField()
+
+class PNLRollingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Trade
+        fields = "__all__"
 
 class UnplanTradeSerializer(serializers.ModelSerializer):
     class Meta:

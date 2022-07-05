@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
+import datetime
 
 from cryptocode import decrypt
 from dotenv import load_dotenv
@@ -21,6 +22,10 @@ from userstrategies.models import UserStrategy
 load_dotenv()
 APIKEYPASS = os.getenv('APIKEYPASS')
 SECKEYPASS = os.getenv('SECKEYPASS')
+
+
+def OnlyTestCron():
+    print(datetime.datetime.now(), ' just test crontab.')
 
 
 def balances():
@@ -208,5 +213,5 @@ def walletbalances():
 #         serializer.save()
 
     
-    
+OnlyTestCron()
                                     

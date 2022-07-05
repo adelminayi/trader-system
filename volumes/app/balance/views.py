@@ -15,6 +15,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from balance.models import Balance, WalletBalance
 from balance.serializers import BalanceSerializer, BalanceRollingSerializer, WalletBalanceSerializer
+from trades.models import Trade
 
 
 
@@ -59,10 +60,11 @@ class BalanceList(generics.ListAPIView):
             Q(createTime__gte=l[0]),
             Q(createTime__lte=l[1])
         ]
-
         return Balance.objects.filter(reduce(and_, [q for q in Qlist if q.children[0][1] is not None])).order_by('-createTime')[:limit]
     
     def list(self,requests):
+        # adel = Trade.objects.select_related("strategy__secret").all()
+        # print(len(adel))
         queryset = self.get_queryset()
         serializer = BalanceSerializer(queryset, many=True)  
         if queryset.exists():
