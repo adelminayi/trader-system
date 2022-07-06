@@ -295,6 +295,12 @@ class PNLRolling(generics.ListAPIView):
                     l[i] = int(l[i])
                 else:
                     raise APIException("invalid query parameters (from|to).")
+        if int(fromTime) > int(toTime):
+            raise APIException("FromTimestamp should be lower than ToTimestamp.")
+
+        day_duration = 86400000
+        l[0] = (int(fromTime) - (int(fromTime) % day_duration)) + day_duration - 1
+        l[1] = (int(toTime) - (int(toTime) % day_duration)) + day_duration - 1
 
         Qlist=[
             # ~Q(realizedPnl = 0.0),
@@ -305,7 +311,7 @@ class PNLRolling(generics.ListAPIView):
             Q(time__gte=l[0]),
             Q(time__lte=l[1]),
         ]
-
+        print('l:', l)
         if fromTime is not None and toTime is not None:
             queryset = queryset.filter(reduce(and_, [q for q in Qlist if q.children[0][1] is not None])).order_by("-time")
         return queryset
@@ -318,27 +324,32 @@ class PNLRolling(generics.ListAPIView):
         day_duration = 86400000
         result = []
         if fromTime is not None and toTime is not None:
+            fromTime= int(fromTime)
+            toTime=int(toTime)
             '''
             move fromTime to last second of that day, e.g.: 20:32:45 >> 23:59:59
             move toTime to last second of that day, e.g.: 00:01:02 >> 23:59:59
             '''
+            if fromTime % day_duration == 0:
+                fromTime = fromTime - 1
+            if toTime % day_duration == 0:
+                toTime = toTime - 1
+
             begin_day = (int(fromTime) - (int(fromTime) % day_duration)) + day_duration - 1
-            # if int(fromTime) > begin_day:
-            #     # if ts is midDay, move it to newDay ts
-            #     begin_day = begin_day + day_duration
-
             end_day = (int(toTime) - (int(toTime) % day_duration)) + day_duration - 1
-
             steps = int((end_day - begin_day) / day_duration) + 1
+            # print('begin_day :', begin_day)
+            # print('end_day   :',end_day)
+
+            # print('steps:', steps)
 
             for i in range(steps):
                 start_step = begin_day + i * day_duration
                 end_step = start_step + day_duration
-                if end_step > int(toTime):
-                    # if ts is midDay, move ending ts to it
-                    end_step = int(toTime)
+                if end_step > end_day:
+                    break
                 # print('start : {}  - end : {}'.format(start_step, end_step))
-                temp_data = data.filter(Q(time__gte= start_step) & Q(time__lte = end_step))
+                temp_data = data.filter(Q(time__gte= str(start_step)) & Q(time__lte = str(end_step)))
                 # print('temp_data.values()  : ', temp_data.values())
                 uniqe_startegy = list(set(x['strategy_id'] for x in temp_data.values('strategy_id')))
                 # print('uniqe_startegy:', uniqe_startegy)
@@ -346,7 +357,7 @@ class PNLRolling(generics.ListAPIView):
                     total_pnl = 0
                     for item in temp_data.filter(strategy_id= strat).values():
                         total_pnl += item['realizedPnl']- item['commission']
-                    result.append({'time': start_step, 'pnl': total_pnl, 'strategy':strat })
+                    result.append({'time': start_step+1, 'pnl': total_pnl, 'strategy':strat })
                 
         if len(data) != 0:
             return Response(result, status=status.HTTP_200_OK)

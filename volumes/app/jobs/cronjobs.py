@@ -166,6 +166,7 @@ def walletbalances():
                     decrypt(secret.secretKey, SECKEYPASS)
         )
         res = binance.futuresBalance()
+        print('get balance at {} for wallet name : {}'.format(datetime.datetime.now(), secret.walletName))
         balances = [{'asset': b['asset'], 'balance': b['balance']} for b in res if b['balance']!="0.00000000"]
         for bal in balances:
             balanceList.append(
@@ -176,10 +177,10 @@ def walletbalances():
                     "balance": bal["balance"]
                 }
             )
-
     serializer = WalletBalanceSerializer(data=balanceList, many=True)
     if serializer.is_valid():
         serializer.save()
+        print(datetime.datetime.now(), 'save on db success.')
 
 
 # def totalsl():
@@ -212,6 +213,4 @@ def walletbalances():
 #     if serializer.is_valid():
 #         serializer.save()
 
-    
-OnlyTestCron()
                                     

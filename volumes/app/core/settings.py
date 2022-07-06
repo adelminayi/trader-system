@@ -280,7 +280,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CRONJOBS = [
     ('*/5 * * * *', 'jobs.cronjobs.balances'),
     ('0 0 * * *', 'jobs.cronjobs.walletbalances', '>> /tmp/scheduled_job.log'),
-    ('0/1 0 * * *', 'jobs.cronjobs.onlyTestCron', '>> /tmp/onlyTestCron.log'),
+    # ('0 0 * * *', 'jobs.cronjobs.onlyTestCron', '>> /tmp/onlytest.log'),
     ('*/5 * * * *', 'jobs.cronjobs.trades'),
     # ('*/5 * * * *', 'jobs.cronjobs.totaltrades'),
 ]
