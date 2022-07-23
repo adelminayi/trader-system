@@ -63,6 +63,8 @@ urlpatterns = [
     
     path('usertotal/', include('total.urls')),
     
+    path('job/', include('jobs.urls')),
+    
     # social login
     # path('auth/facebook/login/', FacebookLogin.as_view(), name='fb_login'),
     # path('auth/twitter/login/', TwitterLogin.as_view(), name='twitter_login'),

@@ -50,13 +50,17 @@ DEBUG = True
 ALLOWED_HOSTS = ["apiv1.jirnal.ir",
                  "my.jirnal.ir",
                  "dev.panel.jirnal.ir",
+                 "dev.api.jirnal.ir",
+                 "dev.apiv1.jirnal.ir",
                  "localhost",
-                 "192.168.11.33"]
+                 "192.168.11.33",
+                 "192.168.11.89",]
 # CSRF_TRUSTED_ORIGINS = [CSRFORIGIN1]
 CSRF_TRUSTED_ORIGINS = [
                  "http://localhost:3000",
                  "http://192.168.11.33:5100",
-                 "https://apiv1.jirnal.ir"]
+                 "https://apiv1.jirnal.ir",
+                 "https://dev.api.jirnal.ir",]
 
 
 # Application definition
