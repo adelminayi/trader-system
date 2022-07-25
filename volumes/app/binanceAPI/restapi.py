@@ -19,7 +19,7 @@ class Binance:
         self.secretKey  = secretKey
         self.SPOT_URL   = "https://api.binance.com"
         self.FUTURES_URL= "https://fapi.binance.com"
-
+        
     def hashing(self,secretKey,query_string):
         return hmac.new(secretKey.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
 
@@ -184,12 +184,17 @@ class Binance:
         response = self.dispatch_request(self.apiKey,'DELETE')(url=url)
         return response.json()
 
+    def clientOrderId(self,):
+        return str(int(time.time() * 1000))
+
     def marketOrder(self, symbol, side, quantity): 
+        clientOrderId = self.clientOrderId()
         query_string = urlencode({
                                 'symbol':symbol, 
                                 'side':side, 
                                 'type':'MARKET', 
-                                'quantity':quantity
+                                'quantity':quantity,
+                                'newClientOrderId': clientOrderId
                                 })
         query_string = query_string.replace('%27', '%22')                                           
         if query_string:
