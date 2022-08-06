@@ -409,10 +409,19 @@ class Binance:
 
 if __name__=="__main__":
     import time
-    apiKey    = "aWJZ533J0ty18hBdUHHBKp5AOKvq2jXeWyP3m8WrWbyGJ8jBq9cvix1TlJQTxRtt"
-    secretKey = "QhNUo82PM9CnZxLVDP27bcODdYPZY0sUQPCHgcQS0nq4qo06r3gcVSYnd00FvBwn"
+    # salehi
+    # QshYWMcOFx1O2x2B1n204M02fl0ZY1vcMd4O9NoZOWuBVQCLitFI8DSpYW2ZN4JD
+    # ZCDaDR57ncZGDDxxrIxlqGGwu5qgqKZz8mjACdD67ROnfdWdOMGdW22LOnR10u4P
+    apiKey    = "QshYWMcOFx1O2x2B1n204M02fl0ZY1vcMd4O9NoZOWuBVQCLitFI8DSpYW2ZN4JD"
+    secretKey = "ZCDaDR57ncZGDDxxrIxlqGGwu5qgqKZz8mjACdD67ROnfdWdOMGdW22LOnR10u4P"
     bin = Binance(apiKey, secretKey)
-    # res = bin.apiKeyPermission()
+    res = bin.lastTrades(symbol='BTCUSDT',limit=50)
+    total_pnl = 0
+    for item in res:
+        temp = float(item['realizedPnl']) - float(item['commission'])
+        total_pnl += temp
+    print(total_pnl)
+
     # print(res)
     # pprint(bin.futuresBalance()[6]['balance'])
     # pprint(res)

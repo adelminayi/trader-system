@@ -1,12 +1,13 @@
-import profile
+from __future__ import print_function
+from operator import and_
+from functools import reduce
 from sqlite3 import threadsafety
 from django.shortcuts import render
 
 from rest_framework import generics, status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-
-import pprint
+from rest_framework.exceptions import APIException
 
 
 import os
@@ -28,6 +29,7 @@ from profiles.models import Profile
 from keysecrets.models import Secret
 from binanceAPI.restapi import Binance
 from userstrategies.models import UserStrategy
+from rest_framework.pagination import LimitOffsetPagination
 
 
 load_dotenv()
@@ -35,51 +37,41 @@ APIKEYPASS = os.getenv('APIKEYPASS')
 SECKEYPASS = os.getenv('SECKEYPASS')
 
 
-class AdelViewTest(generics.ListAPIView):
-    serializer_class    = TradeSerializer
-    permission_classes  = (AllowAny,)
+class AdelViewTest(generics.ListAPIView, LimitOffsetPagination):
+    serializer_class = TradeSerializer
+    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        userId          = self.request.user.id
-        symbol          = self.request.query_params.get('symbol')
+        userId = self.request.user.id
+        symbol = self.request.query_params.get('symbol')
 
-        Qlist=[
+        Qlist = [
             Q(secret__profile__user__id=userId),
             Q(symbol=symbol),
         ]
-
+        profileid = Profile.objects.get(user_id=self.request.user.id).id
         # return UnplanTrade.objects.filter(reduce(and_, [q for q in Qlist if q.children[0][1] is not None]))
-        orders = Order.objects.select_related("strategy__secret").filter(tardeMatched=False,profile = 31)
+        orders = Order.objects.select_related("strategy__secret").filter(
+            tardeMatched=True, profile=profileid)
         # print('\n\n', len(orders),'\n\n')
         # for item in orders:
         #     print(item.orderId)
-
         return orders
-        # for order in orders:
-        #     orderList.append(
-        #         {
-        #             "profile":   order.profile.id,
-        #             "strategy":  order.strategy.id,
-        #             "symbol":    order.symbol,
-        #             "orderId":   order.orderId,
-        #             "apiKey":    order.strategy.secret.apiKey,
-        #             "secretKey": order.strategy.secret.secretKey,
-        #             "secret":    order.strategy.secret.id
-        #         }
-        #     )
-
-
-
 
     def list(self, request):
+        profileid = Profile.objects.get(user_id=self.request.user.id).id
 
         orderList = []
-        tardesdf  = pd.DataFrame([], columns=['buyer','commission','commissionAsset','id','maker',
-                                            'marginAsset','orderId','positionSide','price','qty',
-                                            'quoteQty','realizedPnl','side','symbol','time', 'secret'])
+        tardesdf = pd.DataFrame([], columns=['buyer', 'commission', 'commissionAsset', 'id', 'maker',
+                                             'marginAsset', 'orderId', 'positionSide', 'price', 'qty',
+                                             'quoteQty', 'realizedPnl', 'side', 'symbol', 'time', 'secret'])
         # print(tardesdf)
         # Columns: [buyer, commission, commissionAsset, id, maker, marginAsset, orderId, positionSide, price, qty, quoteQty, realizedPnl, side, symbol, time, secret]
-        orders = Order.objects.select_related("strategy__secret").filter(tardeMatched=False)
+        orders = Order.objects.select_related("strategy__secret").filter(
+            tardeMatched=True, profile=profileid)
+        print(orders[0])
+        # order record representation
+        # rezaei - 0935 560 4236, orderID:64993434619
         for order in orders:
             orderList.append(
                 {
@@ -93,113 +85,184 @@ class AdelViewTest(generics.ListAPIView):
                 }
             )
             # print(orderList[-1])
-        orderdf  = pd.DataFrame(orderList).drop(["apiKey","secretKey","secret","symbol"], axis=1).sort_values(by=["orderId"])
+        orderdf = pd.DataFrame(orderList).drop(
+            ["apiKey", "secretKey", "secret", "symbol"], axis=1).sort_values(by=["orderId"])
         # print(orderdf[-10:])
         #    profile  strategy      orderId
         # 0        4        59  62721964416
-        secrets  = pd.DataFrame(orderList).groupby(["apiKey","secretKey","symbol","secret"]).agg(['unique'])\
-                                        .drop(["profile","strategy","orderId"], axis=1)\
-                                        .to_dict('split')["index"]
+        # print(orderList[-1])
+        secrets = pd.DataFrame(orderList).groupby(["apiKey", "secretKey", "symbol", "secret"]).agg(['unique'])\
+            .drop(["profile", "strategy", "orderId"], axis=1)\
+            .to_dict('split')["index"]
         # print(secrets[-1:])
+        # print(len(secrets))
         # [('rNOZt1RX+uzFS3s2A==', '+Y6bMc3o0giw==', 'BTCUSDT', 3)]
 
         secretList = []
         for secret in secrets:
-            secretList.append((decrypt(secret[0], APIKEYPASS), decrypt(secret[1], SECKEYPASS), secret[2], secret[3]))
+            secretList.append((decrypt(secret[0], APIKEYPASS), decrypt(
+                secret[1], SECKEYPASS), secret[2], secret[3]))
         # print(secretList[-1])
         # ('QshW2ZN4JD', 'ZOnR10u4P', 'BTCUSDT', 3)
         secrets = secretList
         # print((secretList)) ****  len: 5
-        dfList = [tardesdf,]
+        dfList = [tardesdf, ]
         for secret in secrets:
-            binance   = Binance(secret[0], secret[1])
-            resdf     = pd.DataFrame(binance.lastTrades(secret[2], "20"))
+            binance = Binance(secret[0], secret[1])
+            resdf = pd.DataFrame(binance.lastTrades(secret[2], "20"))
             resdf['secret'] = secret[3]
             dfList.append(resdf)
-        tardesdf  = pd.concat(dfList, ignore_index=True)
-
-        # tardesdf = tardesdf.sort_values(by=["orderId"])
-
-        # finaldf  = pd.merge(tardesdf, orderdf, how = 'inner', on = 'orderId')
-        # finaldf.rename(columns={"id": "tradeId"}, inplace=True)
-        # finaldf.drop(columns=['secret'], inplace=True)
-
-        # orderIds = finaldf["orderId"].tolist()
-
-        # data = finaldf.to_dict("records")
-
-        # serializer = TradeSerializer(data=data, many=True)
-        # if serializer.is_valid():
-        #     serializer.save()
-        #     Order.objects.filter(orderId__in=orderIds).update(tardeMatched=True)
-
-        # unplanTradesdf = pd.merge(tardesdf, orderdf, how = 'left', on = 'orderId')
-        # unplanTradesdf.rename(columns={"id": "tradeId"}, inplace=True)
-        # unplanTradesdf = unplanTradesdf[unplanTradesdf['strategy'].isna()]
-        # unplanTradesdf.drop(columns=['profile','strategy'], inplace=True)
-
-        # data = unplanTradesdf.to_dict("records")
-
-        # serializer = UnplanTradeSerializer(data=data, many=True)
-        # if serializer.is_valid():
-        #     serializer.save()
-
-
+        tardesdf = pd.concat(dfList, ignore_index=True)
 
         queryset = self.get_queryset()
-        serializer = OrderSerializer(queryset, many=True)  
+        serializer = OrderSerializer(queryset, many=True)
         if queryset.exists():
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response([], status=status.HTTP_200_OK)
-
 
 
 class SystemTrades(generics.ListAPIView):
-    serializer_class    = TradeSerializer
-    permission_classes  = (AllowAny,)
+    '''
+    get order list which get executed
+    get trade list from db
+    filter trades which not exists in orders
+    '''
+    serializer_class = TradeSerializer
+    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        userId          = self.request.user.id
-        symbol          = self.request.query_params.get('symbol')
+        userId = self.request.user.id
+        symbol = self.request.query_params.get('symbol')
+        fromTime = self.request.query_params.get('from')
+        toTime = self.request.query_params.get('to')
+        strategy = self.request.query_params.get('strategy')
+        side = self.request.query_params.get('side')
+        pnllte = self.request.query_params.get('pnllte')
+        pnlgte = self.request.query_params.get('pnlgte')
+        qtylte = self.request.query_params.get('qtylte')
+        qtygte = self.request.query_params.get('qtygte')
+        pricelte = self.request.query_params.get('pricelte')
+        pricegte = self.request.query_params.get('pricegte')
+        commissionlte = self.request.query_params.get('commissionlte')
+        commissiongte = self.request.query_params.get('commissiongte')
+        profileid = Profile.objects.get(user_id=self.request.user.id).id
 
-        Qlist=[
-            Q(secret__profile__user__id=userId),
+        l1 = [fromTime, toTime]
+        l2 = [pnllte, pnlgte, qtylte, qtygte, pricelte,
+              pricegte, commissionlte, commissiongte]
+
+        for i in range(len(l1)):
+            if l1[i] is not None:
+                if l1[i].isdigit():
+                    l1[i] = int(l1[i])
+                else:
+                    raise APIException("invalid query parameters(from|to).")
+
+        for i in range(len(l2)):
+            if l2[i] is not None:
+                try:
+                    l2[i] = float(l2[i])
+                except:
+                    raise APIException(
+                        "invalid query parameters(pnl|qty|price|commission).")
+        Qlist = [
             Q(symbol=symbol),
+            Q(profile_id=profileid),
+            Q(updateTime__gte=l1[0]),
+            Q(updateTime__lte=l1[1]),
+            Q(strategy__strategy=strategy),
+            Q(side=side),
+            Q(realizedPnl__lte=l2[0]),
+            Q(realizedPnl__gte=l2[1]),
+            Q(qty__lte=l2[2]),
+            Q(qty__gte=l2[3]),
+            Q(price__lte=l2[4]),
+            Q(price__gte=l2[5]),
+            Q(commission__lte=l2[6]),
+            Q(commission__gte=l2[7]),
+            Q(tardeMatched=True)
         ]
-        # return UnplanTrade.objects.filter(reduce(and_, [q for q in Qlist if q.children[0][1] is not None]))
-        orders = Order.objects.select_related("strategy__secret").filter(tardeMatched=False,profile = 31)
+
+        orders = Order.objects.filter(
+            reduce(and_, [q for q in Qlist if q.children[0][1] is not None]))
         return orders
-    
+
     def list(self, request):
-        print(self.request.user.id)
-        profile_id = Profile.objects.get(user_id=self.request.user.id)
-        print(profile_id.id)
-        orderList=set()
-        # orders = Order.objects.select_related("strategy__secret").filter(tardeMatched=False, profile =31)
-        orders = Order.objects.select_related("strategy__secret").filter(profile =profile_id)
-        for order in orders:
-            orderList.add(order.orderId)
+        userId = self.request.user.id
+        symbol = self.request.query_params.get('symbol')
+        fromTime = self.request.query_params.get('from')
+        toTime = self.request.query_params.get('to')
+        strategy = self.request.query_params.get('strategy')
+        side = self.request.query_params.get('side')
+        pnllte = self.request.query_params.get('pnllte')
+        pnlgte = self.request.query_params.get('pnlgte')
+        qtylte = self.request.query_params.get('qtylte')
+        qtygte = self.request.query_params.get('qtygte')
+        pricelte = self.request.query_params.get('pricelte')
+        pricegte = self.request.query_params.get('pricegte')
+        commissionlte = self.request.query_params.get('commissionlte')
+        commissiongte = self.request.query_params.get('commissiongte')
+        profile_id = Profile.objects.get(user_id=self.request.user.id).id
 
-        # print((orderList))
-        trades = Trade.objects.select_related("strategy__secret").filter(profile=profile_id)#, strategy=49)
-        # print(trades.values()[0:8])
-        # print(len(trades))
-        tradesList=set()
-        for trade in trades:
-            tradesList.add(trade.orderId)
-        # print(((tradesList)))
+        l1 = [fromTime, toTime]
+        l2 = [pnllte, pnlgte, qtylte, qtygte, pricelte,
+              pricegte, commissionlte, commissiongte]
 
-        matched_orders = list(orderList & tradesList)
-        print(len(matched_orders))
-        qs = trades.filter(orderId__in=matched_orders)
-        # print('\n\nqa:\n' , qs.values()[0])
+        for i in range(len(l1)):
+            if l1[i] is not None:
+                if l1[i].isdigit():
+                    l1[i] = int(l1[i])
+                else:
+                    raise APIException("invalid query parameters(from|to).")
 
+        for i in range(len(l2)):
+            if l2[i] is not None:
+                try:
+                    l2[i] = float(l2[i])
+                except:
+                    raise APIException(
+                        "invalid query parameters(pnl|qty|price|commission).")
+        Qlist = [
+            Q(symbol=symbol),
+            Q(profile_id=profile_id),
+            Q(time__gte=l1[0]),
+            Q(time__lte=l1[1]),
+            Q(strategy__strategy=strategy),
+            Q(side=side),
+            Q(realizedPnl__lte=l2[0]),
+            Q(realizedPnl__gte=l2[1]),
+            Q(qty__lte=l2[2]),
+            Q(qty__gte=l2[3]),
+            Q(price__lte=l2[4]),
+            Q(price__gte=l2[5]),
+            Q(commission__lte=l2[6]),
+            Q(commission__gte=l2[7]),
+        ]
 
-        queryset = self.get_queryset() 
+        trades = Trade.objects.filter(reduce(and_, [q for q in Qlist if q.children[0][1] is not None]))
+        # print(trades.values()[0])
+        tradesdf = pd.DataFrame(list(trades.values()))
+        trades_id= set(tradesdf['orderId'])
+        # tradesdf.to_csv('/home/minayi/dev/users/volumes/app/jobs/tradesdf2.py',index=False)
+        # print(tradesdf)
+
+        # orderList = []
+        orders = self.get_queryset()
+        # print(orders.values()[0])
+        ordersdf = pd.DataFrame(list(orders.values()))
+        orders_id=set(ordersdf['orderId'])
+        personal_trades_id = list(trades_id.difference(orders_id))
+        # print(len(personal_trades_id))
+        personal_trades = trades.filter(orderId__in=personal_trades_id)
+        # print(personal_trades)
+
+        results  = self.paginate_queryset(personal_trades)
+        serializer = TradeSerializer(data=results, many=True)
         
-        serializer = TradeSerializer(qs, many=True)  
-        if queryset.exists():
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        if personal_trades.exists():
+            return self.get_paginated_response(serializer.data)
         else:
             return Response([], status=status.HTTP_200_OK)
+
+

@@ -69,6 +69,8 @@ def trades():
                 "secret":    order.strategy.secret.id
             }
         )
+
+    # print(orderList[0])
     orderdf  = pd.DataFrame(orderList).drop(["apiKey","secretKey","secret","symbol"], axis=1).sort_values(by=["orderId"])
 
     secrets  = pd.DataFrame(orderList).groupby(["apiKey","secretKey","symbol","secret"]).agg(['unique'])\
@@ -114,8 +116,7 @@ def trades():
     serializer = UnplanTradeSerializer(data=data, many=True)
     if serializer.is_valid():
         serializer.save()
-
-    
+   
 
 def totaltrades():
     from pymongo import MongoClient
@@ -182,7 +183,7 @@ def walletbalances():
         serializer.save()
         print(datetime.datetime.now(), 'save on db success.')
 
-
+################################
 # def totalsl():
 #     secretlist = []
 #     userstrat = UserStrategy.objects.select_related("secret").filter(Q(isActive=True) & \
@@ -213,4 +214,71 @@ def walletbalances():
 #     if serializer.is_valid():
 #         serializer.save()
 
-                                    
+def user_trades():
+    print(datetime.datetime.now(), ' Im in trades crontab.')
+    orderList = []
+    tardesdf  = pd.DataFrame([], columns=['buyer','commission','commissionAsset','id','maker',
+                                          'marginAsset','orderId','positionSide','price','qty',
+                                          'quoteQty','realizedPnl','side','symbol','time', 'secret'])
+    orders = Order.objects.select_related("strategy__secret").filter(tardeMatched=False)
+    for order in orders:
+        orderList.append(
+            {
+                "profile":   order.profile.id,
+                "strategy":  order.strategy.id,
+                "symbol":    order.symbol,
+                "orderId":   order.orderId,
+                "apiKey":    order.strategy.secret.apiKey,
+                "secretKey": order.strategy.secret.secretKey,
+                "secret":    order.strategy.secret.id
+            }
+        )
+    orderdf  = pd.DataFrame(orderList).drop(["apiKey","secretKey","secret","symbol"], axis=1).sort_values(by=["orderId"])
+
+    secrets  = pd.DataFrame(orderList).groupby(["apiKey","secretKey","symbol","secret"]).agg(['unique'])\
+                                      .drop(["profile","strategy","orderId"], axis=1)\
+                                      .to_dict('split')["index"]
+
+    secretList = []
+    for secret in secrets:
+        secretList.append((decrypt(secret[0], APIKEYPASS), decrypt(secret[1], SECKEYPASS), secret[2], secret[3]))
+    
+    secrets = secretList
+
+    dfList = [tardesdf,]
+    for secret in secrets:
+        binance   = Binance(secret[0], secret[1])
+        resdf     = pd.DataFrame(binance.lastTrades(secret[2], "20"))
+        resdf['secret'] = secret[3]
+        dfList.append(resdf)
+    tardesdf  = pd.concat(dfList, ignore_index=True)
+
+    tardesdf = tardesdf.sort_values(by=["orderId"])
+
+    finaldf  = pd.merge(tardesdf, orderdf, how = 'inner', on = 'orderId')
+    finaldf.rename(columns={"id": "tradeId"}, inplace=True)
+    finaldf.drop(columns=['secret'], inplace=True)
+
+    orderIds = finaldf["orderId"].tolist()
+
+    data = finaldf.to_dict("records")
+
+    serializer = TradeSerializer(data=data, many=True)
+    if serializer.is_valid():
+        try:
+            print('serializer data :\n',data)
+        except:
+            print('cant print serializer.data')
+        serializer.save()
+        Order.objects.filter(orderId__in=orderIds).update(tardeMatched=True)
+
+    unplanTradesdf = pd.merge(tardesdf, orderdf, how = 'left', on = 'orderId')
+    unplanTradesdf.rename(columns={"id": "tradeId"}, inplace=True)
+    unplanTradesdf = unplanTradesdf[unplanTradesdf['strategy'].isna()]
+    unplanTradesdf.drop(columns=['profile','strategy'], inplace=True)
+
+    data = unplanTradesdf.to_dict("records")
+
+    serializer = UnplanTradeSerializer(data=data, many=True)
+    if serializer.is_valid():
+        serializer.save()
