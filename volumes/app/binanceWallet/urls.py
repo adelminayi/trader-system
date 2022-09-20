@@ -26,4 +26,6 @@ urlpatterns = [
     path('dualSidePosition/<int:id>/',           DualSidePosition.as_view() ,     name="DualSidePosition"),
     path('lastTrades/<int:id>/',                 LastTrades.as_view() ,           name="LastTrades"),
     path('lastOrders/<int:id>/',                 LastOrders.as_view() ,           name="LastOrders"),
+    path('cancel/',                              CloseUserOrders.as_view() ,      name="calcel"),
+    
 ]

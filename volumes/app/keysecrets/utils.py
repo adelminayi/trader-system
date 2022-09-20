@@ -19,8 +19,8 @@ def get_api_keys():
     # sctkey =encrypt('QhNUo82PM9CnZxLVDP27bcODdYPZY0sUQPCHgcQS0nq4qo06r3gcVSYnd00FvBwn', SECKEYPASS)
 
 
-    apk =decrypt('e44FgPLQAaKIFmtkJl2z7JFgWsZiEMReXKmIUGfTg/3nJeCXmYFoiD1sJ6Vjw3CqSXKAsj5vrRIak6EBert6dA==*X8KcBptuKf8BoNtw2rEslw==*A5iv2CKqB9wlHp0PJm0Afg==*CuZpKff1cQI1LkIKGdU51w==', APIKEYPASS)
-    sctkey = decrypt('zyc0I8HExFjWHu87mn2u57zGibNsLHsISACmpaz3L0AJrrlBp74r9R3b4v5gpYE6JP41Ljf8U5Z4X7hSqNXk+g==*npvRuJniy4jrfwTgG77EgA==*CwynALeptwzXnTC9p8yvJg==*FY9xykgoWHwqJR2ZV0MNgQ==', SECKEYPASS)
+    apk =decrypt('a3e5/T08ZGdoxlpjdS0yKuv1C6Nvlii+fdAFop0SBTBH1hG/Zbc2TavVnSTFq6uaV+lA/+hdqT8Zu0XKdhNqpA==*6tWYuc0fQ7hDFoLz5Ui4KA==*V1vB1/JbTXM0KQnw3uIgOA==*7tSV08++KAt9a1Axkb2yzA==', APIKEYPASS)
+    sctkey = decrypt('PgWqKQWjadKCUdzTPHUiWZzjApiNA9+BSvtD8Y0RMV1bNPSI9P3IsdUOXDEeITnRzSEH+Rz+TKwVLC3qvpMWmg==*V33WhUjnMEEJgxIGZ15jQA==*leqdy04uakRANVZgB2TLuA==*ml3322DJ7Z6gxIwLIDO7lg==', SECKEYPASS)
     print(apk)
     print(sctkey)
 

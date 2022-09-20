@@ -1,7 +1,6 @@
 from __future__ import print_function
 from operator import and_
 from functools import reduce
-from sqlite3 import threadsafety
 from django.shortcuts import render
 
 from rest_framework import generics, status
@@ -9,11 +8,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException
 
+import datetime
 
 import os
-import numpy as np
 import pandas as pd
-import datetime
 
 from cryptocode import decrypt
 from dotenv import load_dotenv
@@ -240,10 +238,11 @@ class SystemTrades(generics.ListAPIView):
             Q(commission__gte=l2[7]),
         ]
 
-        trades = Trade.objects.filter(reduce(and_, [q for q in Qlist if q.children[0][1] is not None]))
+        trades = Trade.objects.filter(
+            reduce(and_, [q for q in Qlist if q.children[0][1] is not None]))
         # print(trades.values()[0])
         tradesdf = pd.DataFrame(list(trades.values()))
-        trades_id= set(tradesdf['orderId'])
+        trades_id = set(tradesdf['orderId'])
         # tradesdf.to_csv('/home/minayi/dev/users/volumes/app/jobs/tradesdf2.py',index=False)
         # print(tradesdf)
 
@@ -251,18 +250,72 @@ class SystemTrades(generics.ListAPIView):
         orders = self.get_queryset()
         # print(orders.values()[0])
         ordersdf = pd.DataFrame(list(orders.values()))
-        orders_id=set(ordersdf['orderId'])
+        orders_id = set(ordersdf['orderId'])
         personal_trades_id = list(trades_id.difference(orders_id))
         # print(len(personal_trades_id))
         personal_trades = trades.filter(orderId__in=personal_trades_id)
         # print(personal_trades)
 
-        results  = self.paginate_queryset(personal_trades)
+        results = self.paginate_queryset(personal_trades)
         serializer = TradeSerializer(data=results, many=True)
-        
+
         if personal_trades.exists():
             return self.get_paginated_response(serializer.data)
         else:
             return Response([], status=status.HTTP_200_OK)
 
 
+class TotalStopLoss(generics.ListAPIView):
+    serializer_class = TradeSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return Profile.objects.get(user_id=1)
+
+    def list(self, request, *args, **kwargs):
+        secretlist = []
+        userstrat = UserStrategy.objects.select_related("secret").filter(Q(isActive=False) & \
+                                                                            Q(secret__profile__isEnable=True) & \
+                                                                            Q(secret__profile__isActive=True))
+        # print('userstrat:', userstrat)
+        for strat in userstrat:
+            secretlist.append(
+                {
+                    "secret_id": strat.secret.id,
+                    "symbol":    strat.symbol,
+                    "totallSL":  strat.totallSL,
+                    "margin" : strat.margin,
+                    "size" : strat.size,
+                    "strategy_id": strat.id,
+                    "apiKey":    decrypt(strat.secret.apiKey, APIKEYPASS),
+                    "secretKey": decrypt(strat.secret.secretKey, SECKEYPASS)
+                }
+            )
+            print(strat.id)
+            # orders_qs = Order.objects.filter(strategy_id=strat.id, tardeMatched=False, )
+            # print(orders_qs)
+        print('secretlist: ',secretlist)
+        # for secret in secretlist:
+        #     binance = Binance(
+        #                 secret["apiKey"],
+        #                 secret["secretKey"]
+        #     )
+            # secret["current_balances"] = float(binance.futuresBalance()[6]['balance'])
+        #     # print(secret["current_balances"])
+        #     secret.pop("apiKey")
+        #     secret.pop("secretKey")
+
+        #     if secret["current_balances"] * (1 - (secret["totalSL"] + secret["totalSL"] * 1.2)) < secret["margin"]:
+        #         pass
+        # print(secretlist)
+        
+
+    #     initial_balance = WalletBalance.objects.
+
+    #     serializer = WalletBalanceSerializer(data=balanceList, many=True)
+    #     if serializer.is_valid():
+    #         serializer.save()
+        # print(self.get_queryset())
+        # print('\n\n',userstrat)
+
+        return Response([], status=status.HTTP_200_OK)

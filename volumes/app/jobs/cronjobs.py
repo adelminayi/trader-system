@@ -2,13 +2,16 @@ import os
 import numpy as np
 import pandas as pd
 import datetime
+import gspread
+import json
+
+
 
 from cryptocode import decrypt
 from dotenv import load_dotenv
 
 from django.db.models import Q
 from balance.models import WalletBalance
-
 from balance.serializers import BalanceSerializer, WalletBalanceSerializer
 from trades.serializers import TradeSerializer, UnplanTradeSerializer
 from trades.models import Trade, UnplanTrade
@@ -16,16 +19,19 @@ from orders.models import Order
 from keysecrets.models import Secret
 from binanceAPI.restapi import Binance
 from userstrategies.models import UserStrategy
+from jobs.utils import saveResponse
 
+from userstrategies.models import UserStrategy
+from balance.models import WalletBalance
 
 
 load_dotenv()
 APIKEYPASS = os.getenv('APIKEYPASS')
 SECKEYPASS = os.getenv('SECKEYPASS')
+CREDENTIALS=os.getenv('CREDENTIALS')
 
-
-def OnlyTestCron():
-    print(datetime.datetime.now(), ' just test crontab.')
+def onlyTestCron():
+    print(datetime.datetime.now(), ' just test crontab!')
 
 
 def balances():
@@ -50,8 +56,10 @@ def balances():
     if serializer.is_valid():
         serializer.save()
 
+    print('balace saved at :', datetime.datetime.now())
 
 def trades():
+    print(datetime.datetime.now(), ' Im in trades crontab.')
     orderList = []
     tardesdf  = pd.DataFrame([], columns=['buyer','commission','commissionAsset','id','maker',
                                           'marginAsset','orderId','positionSide','price','qty',
@@ -69,8 +77,6 @@ def trades():
                 "secret":    order.strategy.secret.id
             }
         )
-
-    # print(orderList[0])
     orderdf  = pd.DataFrame(orderList).drop(["apiKey","secretKey","secret","symbol"], axis=1).sort_values(by=["orderId"])
 
     secrets  = pd.DataFrame(orderList).groupby(["apiKey","secretKey","symbol","secret"]).agg(['unique'])\
@@ -103,6 +109,10 @@ def trades():
 
     serializer = TradeSerializer(data=data, many=True)
     if serializer.is_valid():
+        try:
+            print('serializer data :\n',data)
+        except:
+            print('cant print serializer.data')
         serializer.save()
         Order.objects.filter(orderId__in=orderIds).update(tardeMatched=True)
 
@@ -116,7 +126,6 @@ def trades():
     serializer = UnplanTradeSerializer(data=data, many=True)
     if serializer.is_valid():
         serializer.save()
-   
 
 def totaltrades():
     from pymongo import MongoClient
@@ -181,38 +190,7 @@ def walletbalances():
     serializer = WalletBalanceSerializer(data=balanceList, many=True)
     if serializer.is_valid():
         serializer.save()
-        print(datetime.datetime.now(), 'save on db success.')
-
-################################
-# def totalsl():
-#     secretlist = []
-#     userstrat = UserStrategy.objects.select_related("secret").filter(Q(isActive=True) & \
-#                                                                     Q(secret__profile__isEnable=True) & \
-#                                                                     Q(secret__profile__isActive=True))
-#     for strat in userstrat:
-#         secretlist.append(
-#             {
-#                 "secret_id": strat.secret.id,
-#                 # "symbol":    strat.symbol,
-#                 "totallSL":  strat.totallSL,
-#                 "apiKey":    decrypt(strat.secret.apiKey, APIKEYPASS),
-#                 "secretKey": decrypt(strat.secret.secretKey, SECKEYPASS)
-#             }
-#         )
-#     for secret in secretlist:
-#         binance = Binance(
-#                     secret["apiKey"],
-#                     secret["secretKey"]
-#         )
-#         secret["current_balances"] = float(binance.futuresBalance()[6]['balance'])
-#         secret.pop["apiKey"]
-#         secret.pop["secretKey"]
-
-#     initial_balance = WalletBalance.objects.
-
-#     serializer = WalletBalanceSerializer(data=balanceList, many=True)
-#     if serializer.is_valid():
-#         serializer.save()
+        print(datetime.datetime.now(), 'save on db success.\n\n')
 
 def user_trades():
     print(datetime.datetime.now(), ' Im in trades crontab.')
@@ -282,3 +260,89 @@ def user_trades():
     serializer = UnplanTradeSerializer(data=data, many=True)
     if serializer.is_valid():
         serializer.save()
+    
+
+def total_stoploss():
+    secretlist = []
+    userstrat = UserStrategy.objects.select_related("secret").filter(Q(isActive=True) & \
+                                                                        Q(secret__profile__isEnable=True) & \
+                                                                        Q(secret__profile__isActive=True))
+    # print('userstrat:', userstrat)
+    for strat in userstrat:
+        secretlist.append(
+            {
+                "profile_id": strat.secret.profile_id,
+                "secret_id": strat.secret.id,
+                "strategy_id": strat.id,
+                "symbol":    strat.symbol,
+                "totallSL":  strat.totallSL,
+                "margin" : strat.margin,
+                "size" : strat.size,
+                "apiKey":    decrypt(strat.secret.apiKey, APIKEYPASS),
+                "secretKey": decrypt(strat.secret.secretKey, SECKEYPASS)
+            }
+        )
+        # orders_qs = Order.objects.filter(strategy_id=strat.id , tardeMatched = False)
+        # print(len(orders_qs))
+    # print('secretlist: ',secretlist)
+
+    for secret in secretlist:
+        binance = Binance(secret["apiKey"],secret["secretKey"])
+        secret["current_balances"] = float(binance.futuresBalance()[6]['balance'])
+        # print(secret["current_balances"])
+        secret.pop("apiKey")
+        secret.pop("secretKey")
+
+        if secret["current_balances"] * (1 - (secret["totalSL"] + secret["totalSL"] * 1.2)/100) < secret["margin"]:
+            pass
+        # close all orders
+        order_res = binance.cancelAllOrders(secret['symbol'])
+        # close all positions
+        positions_res = binance.CloseCurrentPositions(secret['symbol'])
+        saveResponse(response=positions_res, userStrategyId=secret['strategy_id'],
+                    profileId=secret['profile_id'])
+    # return Response(secretlist, status=status.HTTP_200_OK)
+
+def make_user_data():
+    query = UserStrategy.objects.filter(isActive=True)
+    result =[]
+    for item in query:
+        data=[item.secret.profile.user.username,
+            item.secret.profile.user.email,
+            str(item.secret.profile.cellPhoneNumber),
+            item.strategy,
+            # item.secret.id,
+            WalletBalance.objects.filter(secret=item.secret.id).latest('id').balance,
+            ]
+        # data_temp=[item.secret.profile.user.username,
+        #     item.secret.profile.user.first_name,
+        #     item.secret.profile.user.last_name,
+        #     item.secret.profile.user.date_joined,
+        #     item.secret.profile.isActive,
+        #     # str(item.secret.profile.paymentTime),
+        #     item.secret.profile.user.email,
+        #     str(item.secret.profile.cellPhoneNumber),
+        #     item.strategy,
+        #     WalletBalance.objects.filter(secret=item.secret.id).latest('id').balance,
+        #     ]
+        result.append(data)
+
+    return result
+
+def users_status():
+    credentials=json.loads(CREDENTIALS)
+    gc = gspread.service_account_from_dict(credentials)
+    sh = gc.open_by_key("1NhEW9CDykKkIgF3Tqj5WuTE7jGTrreWuQCijdjGjJ-k")
+    worksheet = sh.worksheet("UsersInfo")
+    worksheet.clear()
+    try:
+        print('Enter try')
+        worksheet.insert_row(values= ['UserName','Email', 'Phone', 'Strategy', 'Balance'])
+        # worksheet.format('A1:E1', 
+        #         {'textFormat': {'bold': True},
+        #         })
+        data = make_user_data()
+        worksheet.insert_rows(row=2, values= data)
+    except:
+        print('faild to write')
+

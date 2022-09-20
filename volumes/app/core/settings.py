@@ -103,6 +103,7 @@ INSTALLED_APPS = [
     'balance.apps.BalanceConfig',
     'events.apps.EventsConfig',
     'emails.apps.EmailsConfig',
+    'draft.apps.DraftConfig',
 ]
 
 MIDDLEWARE = [
@@ -282,9 +283,11 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 # https://pypi.org/project/django-crontab/
 CRONJOBS = [
-    ('*/5 * * * *', 'jobs.cronjobs.balances'),
-    ('0 0 * * *', 'jobs.cronjobs.walletbalances', '>> /tmp/scheduled_job.log'),
-    # ('0 0 * * *', 'jobs.cronjobs.onlyTestCron', '>> /tmp/onlytest.log'),
-    ('*/5 * * * *', 'jobs.cronjobs.trades'),
-    # ('*/5 * * * *', 'jobs.cronjobs.totaltrades'),
+    ('*/5 * * * *', 'jobs.cronjobs.balances', '>> /tmp/balance_scheduled_job.log'),
+    ('0 0 * * *', 'jobs.cronjobs.walletbalances', '>> /tmp/wallet_ballance_scheduled_job.log'),
+    ('*/5 * * * *', 'jobs.cronjobs.onlyTestCron', '>> /tmp/onlytest.log'),
+    ('*/5 * * * *', 'jobs.cronjobs.trades', '>> /tmp/trades_scheduled_job.log'),
+    ('*/30 * * * *', 'jobs.cronjobs.users_status', '>> /tmp/UserStatus.log'),
+    # ('*/5 * * * *', 'jobs.cronjobs.total_stoploss','>> /tmp/tsl_scheduled_job.log'),
 ]
+CRONTAB_COMMAND_SUFFIX = '2>&1'

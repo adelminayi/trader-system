@@ -7,8 +7,8 @@ from urllib.parse import urlencode
 
 from pprint import pprint
 
-
-# from binance.client import Client
+from orders.serializers import OrderSerializer, CanceledOrderSerializer
+from events.serializers import EventSerializer
 
 class Binance:
     def __init__(self,
@@ -19,7 +19,48 @@ class Binance:
         self.secretKey  = secretKey
         self.SPOT_URL   = "https://api.binance.com"
         self.FUTURES_URL= "https://fapi.binance.com"
-        
+
+    def saveResponse(self,response,userStrategyId,profileId):
+        if "orderId" in response:
+            response["profile"]     = profileId
+            response["strategy"]    = userStrategyId
+            response["avgPrice"]    = float(response["avgPrice"])
+            response["cumQty"]      = float(response["cumQty"])
+            response["cumQuote"]    = float(response["cumQuote"])
+            response["executedQty"] = float(response["executedQty"])
+            response["origQty"]     = float(response["origQty"])
+            response["price"]       = float(response["price"])
+            response["stopPrice"]   = float(response["stopPrice"])
+            response["orderType"]   = response["type"]
+            response.pop("type")
+            if "activatePrice" in response:
+                response["activatePrice"] = float(response["activatePrice"])
+            if "priceRate" in response:
+                response["priceRate"] = float(response["priceRate"])
+            serializer = OrderSerializer(data=response)
+            if serializer.is_valid():
+                serializer.save()
+        else:
+            data = {}
+            if "msg" in response and \
+                        response["msg"]!='The operation of cancel all open order is done.':
+                data["symbol"]      = self.symbol
+                data["profile"]     = profileId
+                data["strategy"]    = userStrategyId
+                data["detail"]      = str(response)
+                serializer = EventSerializer(data=data)
+                if serializer.is_valid():
+                    serializer.save()
+            else:
+                data["symbol"]      = self.symbol
+                data["profile"]     = profileId
+                data["strategy"]    = userStrategyId
+                data["detail"]      = str(response)
+                serializer = CanceledOrderSerializer(data=data)
+                if serializer.is_valid():
+                    serializer.save()
+
+    
     def hashing(self,secretKey,query_string):
         return hmac.new(secretKey.encode('utf-8'), query_string.encode('utf-8'), hashlib.sha256).hexdigest()
 
@@ -415,15 +456,15 @@ if __name__=="__main__":
     apiKey    = "QshYWMcOFx1O2x2B1n204M02fl0ZY1vcMd4O9NoZOWuBVQCLitFI8DSpYW2ZN4JD"
     secretKey = "ZCDaDR57ncZGDDxxrIxlqGGwu5qgqKZz8mjACdD67ROnfdWdOMGdW22LOnR10u4P"
     bin = Binance(apiKey, secretKey)
-    res = bin.lastTrades(symbol='BTCUSDT',limit=50)
-    total_pnl = 0
-    for item in res:
-        temp = float(item['realizedPnl']) - float(item['commission'])
-        total_pnl += temp
-    print(total_pnl)
+    # res = bin.lastTrades(symbol='BTCUSDT',limit=50)
+    # total_pnl = 0
+    # for item in res:
+    #     temp = float(item['realizedPnl']) - float(item['commission'])
+    #     total_pnl += temp
+    # print(total_pnl)
 
     # print(res)
-    # pprint(bin.futuresBalance()[6]['balance'])
+    pprint(bin.futuresBalance()[6]['balance'])
     # pprint(res)
 
 

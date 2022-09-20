@@ -6,8 +6,10 @@ services:
     build: "./app"
     #container_name: "usersdev2"
     restart: "always"
-    ports:
-      - "8010:8000"
+    expose:
+      - 5101
+    # ports:
+    #   - "8010:8000"
     volumes:
       - ./volumes/app:/app
       - ./volumes/static:/static

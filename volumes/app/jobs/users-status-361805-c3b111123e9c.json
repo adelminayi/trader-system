@@ -1,0 +1,12 @@
+{
+    "type": "service_account",
+    "project_id": "jirnalusers",
+    "private_key_id": "3c8c343228ee8a4ce3403b0203963f9a92c8b9af",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDBHedwlhMM7FxB\na/R2hFJDGILpKjI0EbZJ9zso248D9f7p/LPpyc1EelLj202+Pcz7lvnAYSuaD9Ar\ntqcxlG+xsRrZuwqeD61mY9TgIXCufVg47SPsLyYmYGPQ3RoJIjYFPg8SHyBgpCiN\nyQirI7IR1b+By65mhAIZFXFC6jg2ucwAVb4zuYO01y1tGQM0kGfvaIjwPG4yW0rv\nOVGYy6rRutFHWA5oraVncxziNNu3Py5ZcxU7Yb7qFrrkqCOUQwx7PDkqRTuCHtJm\n9gJSr1l2+bfl7E8pLjSSwZezHkn0eEEZ4Xqx4QAcGvLI9RXBW1Vb28RFdx/chQGt\nkCYIZrbJAgMBAAECggEAH5jn/FjhxxSJR78FIbsmxomlKcdYrYJUZCfKizXZYZmH\nWvuY6GC3cEPfeh6wyrbL6kJanOqJOszpj610D72sxNMohIWBCDmicoVVGFMAX9xs\naewLG6LfSBovWsZCc0ogspzj1GA5aPaTGBfTjkTp5tclXXRZFbb1rOsAPCWciv90\npp8QHarzygUrHZCIFSthbOVE7vr4rI8elnv2jD5y90Qel7Uthq/ymaISHZ2+I+7D\nYD9b20+Ct7lwNvCZvzA839iEiwSKCclvvqAlUcYzfvzI2DKFKIbsLDLL3nOIPeAZ\nW7rQ30pO7pc6rANcLLZKcH7e/GdhhMlksFlUSgYhvQKBgQDieRIJi3j9fr1vpwJT\niiTrHYeX9H84Jsv5/XHnYLu2lw9g1Han3YiyjNqmN/NbD7BLDwmCG/2HREi1fa91\niGFvG4irt3AdRUR7JYxEVJp52DRVoyFebmZ9p0UnZLbCu4CGZQos75AHRPUcWzTi\nKmjPudPxCGPIPTQCY3eMtyeyhwKBgQDaS4PQPO/qPmLEtB63XDjD4snoNzYXzuCU\nWZftzpx+qC1jau+ZltTMC39IVVDb+uFjhGiRyyfQ0S4RPBMLTY8Op1BSwPIr3KdP\nQZtOQ7WWFYNgYBPLiG2ZAMIsPF65340+/vEGhEmdEk2zZl972rC+6VvBHJkoTNul\nRF2svgeQLwKBgHW4XSnc98083hd1hn4KJtqYBO11x9NWR1zw4w5Ud/6XUwUQK4Vi\nYDX/hYA1QSgqZYb+kACzr/tqASll5ZiAhbUNaONpfLuaT9h7UggKuilvuvRw0V2W\noWvbUNUDQwTCFjLFvp5RAFrm+0n8FuchCE5B1+tIYyWouqorLe9VHSttAoGBAMXo\n+uubo8QSpYdC6ipBUTG/dmCzVbaGGDRHeiffTyDBpszg0bPE/M61icNxniqirR+F\nlyy/LCz0yThU58symQWnCXrNdYHwvjtr9rshRgt5G7APy0KXQQ4bku96GEOaeztm\n9ex7mSXvx0RkByOKJP4hIc/V9sGD1QtkDS2k58R/AoGBAMJf1JZrSZg3s3jAKzDf\nH9IbWRxlIRazKSjhErcVa86Jj7l3+1HhcBs1dp0Lyl0C72pNYmrUM/bkEFWIEzSt\nXCnYuC9pJJr4nAU2MV91dY6Qe8Dgb32t5cPUuVKVddsn9dSjLB2p61ZmAhxYeqhk\nnRzq8xmP44Zy5ooXCLy13OyP\n-----END PRIVATE KEY-----\n",
+    "client_email": "statusjirnalusers@jirnalusers.iam.gserviceaccount.com",
+    "client_id": "106049668139504937667",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/statusjirnalusers%40jirnalusers.iam.gserviceaccount.com"
+    }

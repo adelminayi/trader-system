@@ -46,3 +46,4 @@ wrapt==1.13.3
 uvicorn==0.17.1
 jsonschema==4.4.0
 django-crontab==0.7.1
+gspread==5.5.0

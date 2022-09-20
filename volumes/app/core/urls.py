@@ -64,6 +64,7 @@ urlpatterns = [
     path('usertotal/', include('total.urls')),
     
     path('job/', include('jobs.urls')),
+    path('draft/', include('draft.urls')),
     
     # social login
     # path('auth/facebook/login/', FacebookLogin.as_view(), name='fb_login'),

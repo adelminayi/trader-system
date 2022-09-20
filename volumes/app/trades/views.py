@@ -7,7 +7,7 @@ import numpy as np
 from django.http import Http404
 from django.db.models import Q,F,Sum
 
-from rest_framework import generics
+from rest_framework import generics, views
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException
@@ -50,7 +50,7 @@ class TradeList(generics.ListAPIView, LimitOffsetPagination):
         pricegte        = self.request.query_params.get('pricegte')
         commissionlte   = self.request.query_params.get('commissionlte')
         commissiongte   = self.request.query_params.get('commissiongte')
-        profileid = Profile.objects.get(user_id=self.request.user.id).id
+        # profileid = Profile.objects.get(user_id=self.request.user.id).id
 
         l1 = [fromTime,toTime]
         l2 = [pnllte,pnlgte,qtylte,qtygte,pricelte,pricegte,commissionlte,commissiongte]
@@ -70,7 +70,7 @@ class TradeList(generics.ListAPIView, LimitOffsetPagination):
                     raise APIException("invalid query parameters(pnl|qty|price|commission).")
         Qlist=[
             Q(symbol=symbol),
-            Q(profile_id=profileid),
+            Q(profile__user__id=userId),
             Q(updateTime__gte=l1[0]),
             Q(updateTime__lte=l1[1]),
             Q(strategy__strategy=strategy),
@@ -122,8 +122,6 @@ class TradeList(generics.ListAPIView, LimitOffsetPagination):
             return Response([], status=status.HTTP_200_OK)
 
 
-
-
 class PNL(viewsets.GenericViewSet):
     """
     pnl
@@ -154,64 +152,6 @@ class PNL(viewsets.GenericViewSet):
         queryset2 = queryset1.aggregate(pnl=Sum(F("realizedPnl")-F("commission")))
         # print(queryset1,'\n', len(queryset1))
         return Response(queryset2, status=status.HTTP_200_OK)
-
-
-# class PNLRolling(generics.ListAPIView):
-#     """
-#     rolling pnl
-#     /trades/pnl/3600/?symbol=BTCUSDT&strategy=GAMMA&from=1644483626859&to=1644490326859
-#     """
-#     permission_classes  = (IsAuthenticated,)
-#     pagination_class    = None
-#     serializer_class    = PNLRollingSerializer
-
-#     def get_queryset(self):
-#         userId      = self.request.user.id
-#         symbol      = self.request.query_params.get('symbol')
-#         strategy    = self.request.query_params.get('strategy')
-#         fromTime    = self.request.query_params.get('from')
-#         toTime      = self.request.query_params.get('to')
-#         id          = self.request.query_params.get('id')
-
-#         l = [fromTime,toTime]
-
-#         for i in range(len(l)):
-#             if l[i] is not None:
-#                 if l[i].isdigit():
-#                     l[i] = int(l[i])
-#                 else:
-#                     raise APIException("invalid query parameters(from|to).")
-
-#         Qlist=[
-#             ~Q(realizedPnl = 0.0),
-#             Q(profile__user__id=userId),
-#             Q(strategy__strategy=strategy),
-#             Q(strategy__id=id),
-#             Q(symbol=symbol),
-#             Q(time__gte=l[0]),
-#             Q(time__lte=l[1]),
-#         ]
-
-#         return Trade.objects.filter(reduce(and_, [q for q in Qlist if q.children[0][1] is not None]))\
-#             .order_by("-time").values("time","realizedPnl","commission","strategy")
-
-#     def list(self, request, step):
-#         step = step+"S"
-#         df = pd.DataFrame(list(self.get_queryset()))
-            
-#         if len(df)!=0:
-#             df['time'] = pd.to_datetime(df['time'], unit='ms')
-#             df = df.set_index(['time'])
-#             # df = df.resample(step).sum().reset_index()
-#             df = df.resample(step).mean().ffill().reset_index()
-#             df['pnl'] = df['realizedPnl']-df['commission']
-#             df = df.drop(columns=["realizedPnl","commission"])
-#             df['time'] = df.time.values.astype(np.int64) // 10 ** 6
-#             data = df.to_dict("records")
-#             return Response(data, status=status.HTTP_200_OK)
-#         else:
-#             return Response([], status=status.HTTP_200_OK)
-
 
 class PNLRolling(generics.ListAPIView):
     """

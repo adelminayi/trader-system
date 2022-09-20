@@ -233,5 +233,5 @@ class CheckEmailAddressView(APIView):
             except EmailAddress.DoesNotExist:
                 return Response({"detail": _("Entered email not found!")}, status=status.HTTP_404_NOT_FOUND)
     
-        return Response({'detail': _('Password insert email address.')},)
+        return Response({'detail': _('Please insert email address.')},)
         

@@ -1,16 +1,22 @@
 import os
+from tracemalloc import get_object_traceback
 from dotenv import load_dotenv
 from cryptocode import decrypt
 
 from django.http import Http404
+from requests import request
 
-from rest_framework import status
+from rest_framework import status, views
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import APIException
+from rest_framework import viewsets
+
 
 from keysecrets.models import Secret
+from profiles.models import Profile
+from profiles.serializers import ProfileSerializer
 from binanceAPI.restapi import Binance
 from binanceWallet.serializers import *
 from orders.serializers import OrderSerializer, CanceledOrderSerializer
@@ -768,3 +774,66 @@ class LastOrders(APIView):
             queryset["limit"],
         )
         return Response(res, status=status.HTTP_200_OK)
+
+
+class ClosePlanTrades(views.APIView):
+    """
+    close all users trades and orders with special plan
+    :params: strategy_name
+    """
+    pass
+
+class CloseUserOrders(views.APIView):
+    """
+    close all user orders
+    :params:
+        strategy: str
+        userId: int
+        symbol: str
+    example: http://localhost:8000/binance/cancel/?strategy=D_Surfer
+    """
+    permission_classes = [AllowAny]
+
+    def get_object(self):
+        strategy = self.request.query_params.get('strategy')
+        # print('strategy: ',strategy)
+        if "strategy" == None:
+            raise APIException("mandatory parameters(strategy).")
+        return strategy
+
+    def get_queryset(self, ):
+        mystrategy= self.get_object()
+        try:
+            return UserStrategy.objects.filter(strategy=mystrategy)
+        except Secret.DoesNotExist:
+            raise Http404
+
+    def get(self, request, format=None):
+        """
+        just to test get_queryset
+        """
+        qs= self.get_queryset()
+        # print('query set', qs,'\n\n')
+        for item in qs:
+            symbol = item.symbol
+            # print('secret_id ==', item.secret.id)
+            secret = Secret.objects.get(id=item.secret.id)
+            # print('symbol:',symbol)
+            # print('secret:',secret)
+            apiKey = decrypt(secret.apiKey, APIKEYPASS)
+            secretKey = decrypt(secret.secretKey, SECKEYPASS)
+            # print(secret.apiKey)
+            # print(secret.secretKey)
+            # print('strat id :',item.id)
+            # print('profile id:', item.secret.profile_id)
+            binance = Binance(apiKey, secretKey)
+            cancel_orders = binance.CancelAllOrders(symbol)
+            close_positions = binance.closeCurrentPositions(symbol)
+            saveResponse(response=close_positions, userStrategyId=item.id,
+                     profileId=secret.profile_id)
+
+
+
+
+        ss=self.request.query_params.get('strategy')
+        return Response([ss])
