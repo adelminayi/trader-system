@@ -288,6 +288,8 @@ CRONJOBS = [
     ('*/5 * * * *', 'jobs.cronjobs.onlyTestCron', '>> /tmp/onlytest.log'),
     ('*/5 * * * *', 'jobs.cronjobs.trades', '>> /tmp/trades_scheduled_job.log'),
     ('*/30 * * * *', 'jobs.cronjobs.users_status', '>> /tmp/UserStatus.log'),
+    ('*/15 * * * *', 'jobs.cronjobs.PreRegisterInfo', '>> /tmp/preRegister.log'),
+    
     # ('*/5 * * * *', 'jobs.cronjobs.total_stoploss','>> /tmp/tsl_scheduled_job.log'),
 ]
 CRONTAB_COMMAND_SUFFIX = '2>&1'

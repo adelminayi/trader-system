@@ -1,14 +1,15 @@
 from __future__ import print_function
-from operator import and_
+from operator import and_, imod
 from functools import reduce
 from django.shortcuts import render
 
+from userstrategies.serializers import UserStrategySerializer
+from draft.models import Person
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException
-
-import datetime
+from rest_framework import views
 
 import os
 import pandas as pd
@@ -319,3 +320,22 @@ class TotalStopLoss(generics.ListAPIView):
         # print('\n\n',userstrat)
 
         return Response([], status=status.HTTP_200_OK)
+
+
+class UserInfo(views.APIView):
+    permission_classes=[AllowAny, ]
+
+    def get(self, request):
+        query = Person.objects.all().order_by('id')
+        data=[]
+        # qs_json = serializers.serialize('json', query)
+        # print(qs_json)
+        for item in query:
+            print('========================')
+            print(item.id)
+            print(item.name)
+            print(item.email)
+            print(str(item.phone.national_number))
+            print(item.comment)
+            print('------------------------')
+        return Response(data)

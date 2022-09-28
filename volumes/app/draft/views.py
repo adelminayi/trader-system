@@ -56,3 +56,20 @@ class PersonDetailView(APIView):
             serializer.save()
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         return Response(data="wrong parameters",status=status.HTTP_400_BAD_REQUEST)
+
+class AllowRegister(APIView):
+    """
+    check registration possibility
+    if true, is allowed to register, else rejected
+    """
+    permission_classes=[permissions.AllowAny]
+
+    def get(self, request):
+        email = request.data.get('email')
+        qs = Person.objects.get(email=email)
+        # print(qs)
+        # print(request.data.get('email'))
+        if qs.isAllowed:
+            return Response({'status': True})
+        else:
+            return Response({'status': False})

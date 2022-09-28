@@ -1,10 +1,9 @@
 import os
-import numpy as np
 import pandas as pd
 import datetime
 import gspread
 import json
-
+import datetime
 
 
 from cryptocode import decrypt
@@ -23,6 +22,7 @@ from jobs.utils import saveResponse
 
 from userstrategies.models import UserStrategy
 from balance.models import WalletBalance
+from draft.models import Person
 
 
 load_dotenv()
@@ -308,23 +308,15 @@ def make_user_data():
     result =[]
     for item in query:
         data=[item.secret.profile.user.username,
+            item.secret.profile.user.first_name,
+            item.secret.profile.user.last_name,
+            item.secret.profile.user.date_joined,
+            item.secret.profile.isActive,
             item.secret.profile.user.email,
             str(item.secret.profile.cellPhoneNumber),
             item.strategy,
-            # item.secret.id,
             WalletBalance.objects.filter(secret=item.secret.id).latest('id').balance,
             ]
-        # data_temp=[item.secret.profile.user.username,
-        #     item.secret.profile.user.first_name,
-        #     item.secret.profile.user.last_name,
-        #     item.secret.profile.user.date_joined,
-        #     item.secret.profile.isActive,
-        #     # str(item.secret.profile.paymentTime),
-        #     item.secret.profile.user.email,
-        #     str(item.secret.profile.cellPhoneNumber),
-        #     item.strategy,
-        #     WalletBalance.objects.filter(secret=item.secret.id).latest('id').balance,
-        #     ]
         result.append(data)
 
     return result
@@ -337,7 +329,7 @@ def users_status():
     worksheet.clear()
     try:
         print('Enter try')
-        worksheet.insert_row(values= ['UserName','Email', 'Phone', 'Strategy', 'Balance'])
+        worksheet.insert_row(values= ['userName', 'firstName', 'lastName', 'dateOfJoin', 'isActive', 'email', 'phone', 'strategyName', 'Balance'])
         # worksheet.format('A1:E1', 
         #         {'textFormat': {'bold': True},
         #         })
@@ -346,3 +338,27 @@ def users_status():
     except:
         print('faild to write')
 
+def PreRegisterInfo():
+    query = Person.objects.all()
+    result =[]
+    for item in query:
+        data=[
+            item.name,
+            item.email,
+            str(item.phone.national_number),
+            item.comment,
+        ]
+        result.append(data)
+        
+    credentials=json.loads(CREDENTIALS)
+    gc = gspread.service_account_from_dict(credentials)
+    sh = gc.open_by_key("1NhEW9CDykKkIgF3Tqj5WuTE7jGTrreWuQCijdjGjJ-k")
+    worksheet = sh.worksheet("PreRegistered")
+    worksheet.clear()
+    try:
+        print('Enter Try at:', datetime.datetime.now())
+        worksheet.insert_row(values=['Name', 'Phone', 'Email', 'Comment'])
+        print(result)
+        worksheet.insert_rows(row=2, values= result)
+    except:
+        print( datetime.datetime.now(),': Failed to write')
