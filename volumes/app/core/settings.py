@@ -293,3 +293,7 @@ CRONJOBS = [
     # ('*/5 * * * *', 'jobs.cronjobs.total_stoploss','>> /tmp/tsl_scheduled_job.log'),
 ]
 CRONTAB_COMMAND_SUFFIX = '2>&1'
+
+REST_AUTH_REGISTER_SERIALIZERS = {   
+'REGISTER_SERIALIZER':'emails.utils.RegisterSerializer', 
+}

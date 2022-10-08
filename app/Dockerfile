@@ -29,9 +29,11 @@ RUN pip install --no-cache-dir --default-timeout=500 -r requirements.txt
 
 CMD while ! python3 manage.py sqlflush > /dev/null 2>&1 ; do sleep 1 ; done && \
     echo 'line 31' && \
-    python3 manage.py migrate && \
+    python3 manage.py makemigrations --noinput && \
     echo 'line 33' && \
-    python3 manage.py collectstatic && \
+    python3 manage.py migrate --noinput && \
     echo 'line 35' && \
+    python3 manage.py collectstatic --noinput && \
+    echo 'line 37' && \
     python3 manage.py createsuperuser_if_none_exists --user=amir --password=amir1374 --email=amirayat20@gmail.com; \
     gunicorn -w 5 -b 0.0.0.0:8000 core.asgi:application -k uvicorn.workers.UvicornWorker

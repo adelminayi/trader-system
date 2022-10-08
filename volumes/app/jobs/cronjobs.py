@@ -310,15 +310,15 @@ def make_user_data():
         data=[item.secret.profile.user.username,
             item.secret.profile.user.first_name,
             item.secret.profile.user.last_name,
-            item.secret.profile.user.date_joined,
+            str(item.secret.profile.user.date_joined),
             item.secret.profile.isActive,
             item.secret.profile.user.email,
             str(item.secret.profile.cellPhoneNumber),
             item.strategy,
-            WalletBalance.objects.filter(secret=item.secret.id).latest('id').balance,
+            str(WalletBalance.objects.filter(secret=item.secret.id).latest('id').balance),
             ]
         result.append(data)
-
+    print(result)
     return result
 
 def users_status():
@@ -328,13 +328,14 @@ def users_status():
     worksheet = sh.worksheet("UsersInfo")
     worksheet.clear()
     try:
-        print('Enter try')
+        print('Enter try at: ', datetime.datetime.now())
         worksheet.insert_row(values= ['userName', 'firstName', 'lastName', 'dateOfJoin', 'isActive', 'email', 'phone', 'strategyName', 'Balance'])
         # worksheet.format('A1:E1', 
         #         {'textFormat': {'bold': True},
         #         })
         data = make_user_data()
         worksheet.insert_rows(row=2, values= data)
+        print('row inserted')
     except:
         print('faild to write')
 

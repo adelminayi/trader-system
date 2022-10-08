@@ -4,7 +4,7 @@ services:
 
   web:
     build: "./app"
-    #container_name: "usersdev2"
+    # container_name: "usersdev2"
     restart: "always"
     expose:
       - 5101
@@ -27,7 +27,7 @@ services:
 
   nginx:
     build: "./nginx"
-    container_name: "usersdev2_nginx"
+    # container_name: "usersdev2_nginx"
     restart: "always"
     ports:
       - "5101:80"
@@ -41,7 +41,7 @@ services:
 
   redis:
     image: redis:alpine
-    container_name: "usersdev2_redis"
+    # container_name: "usersdev2_redis"
     restart: always
     expose:
       - "6379"
