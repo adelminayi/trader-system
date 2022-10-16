@@ -44,19 +44,18 @@ class RegisterSerializer(serializers.Serializer):
                     _('A user is already registered with this e-mail address.'),
                 )
         
-        print('***********************')
         print('email:',email)
         qs = Person.objects.filter(email = str(email))
-        # for item in qs:
-        #     print(item.name)
-        print('now qs')
+        print('now qs: ', qs)
         if qs :
             if qs[0].isAllowed is False:
-                # print([item.name for item in qs])
                 raise serializers.ValidationError(
                     _('Registration not allowed')
                 )
-        print('***********************')
+        else:
+            raise serializers.ValidationError(
+                _('please go to PreRegister link.')
+            )
 
         return email
 

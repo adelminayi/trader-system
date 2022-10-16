@@ -44,7 +44,7 @@ class MyAdapter(DefaultAccountAdapter):
         ctx = {
             "user": emailconfirmation.email_address.user,
             "current_site": current_site,
-            "key": ActivationCode.create(emailconfirmation.email_address.user.id)
+            "key": ActivationCode.create(emailconfirmation.email_address.user.id) # comment this line to disable redis temporarely
         }
         if signup:
             email_template = "account/email/email_confirmation_signup"
