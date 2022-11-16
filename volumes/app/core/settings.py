@@ -284,7 +284,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 # https://pypi.org/project/django-crontab/
 CRONJOBS = [
     ('*/5 * * * *', 'jobs.cronjobs.balances', '>> /tmp/balance_scheduled_job.log'),
-    ('0 0 * * *', 'jobs.cronjobs.walletbalances', '>> /tmp/wallet_ballance_scheduled_job.log'),
+    ('30 3 * * *', 'jobs.cronjobs.walletbalances', '>> /tmp/wallet_ballance_scheduled_job.log'),
     ('*/5 * * * *', 'jobs.cronjobs.onlyTestCron', '>> /tmp/onlytest.log'),
     ('*/5 * * * *', 'jobs.cronjobs.trades', '>> /tmp/trades_scheduled_job.log'),
     ('*/30 * * * *', 'jobs.cronjobs.users_status', '>> /tmp/UserStatus.log'),
