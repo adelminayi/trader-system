@@ -7,8 +7,11 @@ from rest_framework.exceptions import NotAcceptable
 from keysecrets.models import Secret
 
 
+class Symbol(models.Model):
+    name = models.CharField(max_length=16)
 
-
+    def __str__(self):
+        return self.name
 
 
 class UserStrategy(models.Model):
@@ -193,9 +196,11 @@ class UserStrategy(models.Model):
                                         on_delete=models.CASCADE, 
                                         related_name="secretuserstrategy")
     strategy        = models.CharField(max_length=32)
-    symbol          = models.CharField(max_length=14, choices=SymbolChoices, default='BTCUSDT')
+    # symbol          = models.CharField(max_length=14, choices=SymbolChoices, default='BTCUSDT')
+    symbols         = models.ManyToManyField(Symbol ,related_name="userstrategys")
     margin          = models.FloatField()
     totallSL        = models.FloatField()
+    risk            = models.FloatField()
     size            = models.FloatField(default=0)
     isActive        = models.BooleanField(default=False)
     baseCurrency    = models.CharField(max_length=4,  choices=BaseCurrencyChoises, default='USDT')
