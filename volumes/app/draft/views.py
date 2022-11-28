@@ -73,3 +73,5 @@ class AllowRegister(APIView):
             return Response({'status': True})
         else:
             return Response({'status': False})
+
+

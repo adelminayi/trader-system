@@ -33,6 +33,7 @@ class Profile(models.Model):
     isEnable                    = models.BooleanField(default=False, db_index=True)
     createTime                  = models.DateTimeField(auto_now_add=True)
     isActive                    = models.BooleanField(default=True, db_index=True)
+    totalSL                     = models.FloatField(default=0)
 
     class Meta:
         db_table    = 'profiles'

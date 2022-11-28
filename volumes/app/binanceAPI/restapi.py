@@ -7,8 +7,8 @@ from urllib.parse import urlencode
 
 from pprint import pprint
 
-from orders.serializers import OrderSerializer, CanceledOrderSerializer
-from events.serializers import EventSerializer
+# from orders.serializers import OrderSerializer, CanceledOrderSerializer
+# from events.serializers import EventSerializer
 
 class Binance:
     def __init__(self,

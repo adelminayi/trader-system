@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from userstrategies.models import UserStrategy
+from userstrategies.models import UserStrategy, Symbol
 
 
 
@@ -17,3 +17,4 @@ class WidgetAdmin(admin.ModelAdmin):
     pass
 
 admin.site.register(UserStrategy, WidgetAdmin)
+admin.site.register(Symbol)
