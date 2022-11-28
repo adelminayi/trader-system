@@ -7,8 +7,8 @@ from urllib.parse import urlencode
 
 from pprint import pprint
 
-from orders.serializers import OrderSerializer, CanceledOrderSerializer
-from events.serializers import EventSerializer
+# from orders.serializers import OrderSerializer, CanceledOrderSerializer
+# from events.serializers import EventSerializer
 
 class Binance:
     def __init__(self,
@@ -139,6 +139,13 @@ class Binance:
         response = self.dispatch_request(self.apiKey,'GET')(url=url)
         return response.json()
 
+    def spotBalance(self,):
+        query_string = 'timestamp={}'.format(self.get_timestamp())
+        url = self.SPOT_URL + '/api/v3/account?' + query_string + '&signature=' + self.hashing(self.secretKey,query_string)
+        print(url)
+        response = self.dispatch_request(self.apiKey,'GET')(url=url)
+        return response.json()
+
     def futuresTrades(self, symbol, startTime, endTime, limit):
         query_string = urlencode({
                                 'symbol':symbol, 
@@ -228,14 +235,13 @@ class Binance:
     def clientOrderId(self,):
         return str(int(time.time() * 1000))
 
-    def marketOrder(self, symbol, side, quantity): 
-        clientOrderId = self.clientOrderId()
+    def marketOrder(self, symbol, side, quantity, positionSide='BOTH'): 
         query_string = urlencode({
                                 'symbol':symbol, 
                                 'side':side, 
+                                'positionSide': positionSide,
                                 'type':'MARKET', 
                                 'quantity':quantity,
-                                'newClientOrderId': clientOrderId
                                 })
         query_string = query_string.replace('%27', '%22')                                           
         if query_string:
@@ -246,10 +252,11 @@ class Binance:
         response = self.dispatch_request(self.apiKey, 'POST')(url=url)
         return response.json()
 
-    def limitOrder(self, symbol, side, quantity, price): 
+    def limitOrder(self, symbol, side, quantity, price, positionSide='BOTH'): 
         query_string = urlencode({
                                 'symbol':symbol, 
                                 'side':side, 
+                                'positionSide': positionSide,
                                 'type':'LIMIT',
                                 'timeInForce':'GTC', 
                                 'quantity':quantity,
@@ -264,18 +271,33 @@ class Binance:
         response = self.dispatch_request(self.apiKey,'POST')(url=url)
         return response.json()
 
-    def stopOrder(self, symbol, side, quantity, price, stopPrice, workingType, priceProtect): 
-        query_string = urlencode({
-                                'symbol':symbol, 
-                                'side':side, 
-                                'type':'STOP',
-                                'timeInForce':'GTC', 
-                                'quantity':quantity,
-                                'price':price,
-                                'stopPrice':stopPrice,
-                                'workingType':workingType,
-                                'priceProtect':priceProtect
-                                })
+    def stopOrder(self, symbol, side, workingType, priceProtect, stopPrice, quantity=None, price=None, positionSide='BOTH',closePosition=True): 
+        if closePosition:
+            query_string = urlencode({
+                                    'symbol':symbol, 
+                                    'side':side, 
+                                    'positionSide':positionSide,
+                                    'type':'STOP_MARKET',
+                                    'timeInForce':'GTC',
+                                    'stopPrice':stopPrice,
+                                    'workingType':workingType,
+                                    'priceProtect':priceProtect,
+                                    'closePosition': closePosition,
+                                    })
+        else:
+            query_string = urlencode({
+                                    'symbol':symbol, 
+                                    'side':side,
+                                    'positionSide':positionSide,
+                                    'type':'STOP',
+                                    'timeInForce':'GTC',
+                                    'quantity':quantity,
+                                    'price':price,
+                                    'stopPrice':stopPrice,
+                                    'workingType':workingType,
+                                    'priceProtect':priceProtect,
+                                    })
+
         query_string = query_string.replace('%27', '%22')                                           
         if query_string:
             query_string = "{}&timestamp={}".format(query_string, self.get_timestamp())
@@ -285,18 +307,32 @@ class Binance:
         response = self.dispatch_request(self.apiKey,'POST')(url=url)
         return response.json()
 
-    def takeProfitOrder(self, symbol, side, quantity, price, stopPrice, workingType, priceProtect): 
-        query_string = urlencode({
-                                'symbol': symbol, 
-                                'side':side, 
-                                'type':'TAKE_PROFIT',
-                                'timeInForce':'GTC', 
-                                'quantity':quantity,
-                                'price':price,
-                                'stopPrice':stopPrice,
-                                'workingType':workingType,
-                                'priceProtect':priceProtect
-                                })
+    def takeProfitOrder(self, symbol, side, workingType, priceProtect, stopPrice, quantity=None, price=None, positionSide='BOTH',closePosition=True): 
+        if closePosition:
+            query_string = urlencode({
+                                    'symbol':symbol, 
+                                    'side':side,
+                                    'positionSide':positionSide,
+                                    'type':'TAKE_PROFIT_MARKET',
+                                    'timeInForce':'GTC',
+                                    'stopPrice':stopPrice,
+                                    'workingType':workingType,
+                                    'priceProtect':priceProtect,
+                                    'closePosition': closePosition,
+                                    })
+        else:
+            query_string = urlencode({
+                                    'symbol':symbol, 
+                                    'side':side,
+                                    'positionSide':positionSide,
+                                    'type':'TAKE_PROFIT',
+                                    'timeInForce':'GTC',
+                                    'quantity':quantity,
+                                    'price':price,
+                                    'stopPrice':stopPrice,
+                                    'workingType':workingType,
+                                    'priceProtect':priceProtect,
+                                    })
         query_string = query_string.replace('%27', '%22')                                           
         if query_string:
             query_string = "{}&timestamp={}".format(query_string, self.get_timestamp())
@@ -306,10 +342,11 @@ class Binance:
         response = self.dispatch_request(self.apiKey,'POST')(url=url)
         return response.json()
 
-    def trailStopOrder(self, symbol, side, quantity, activationPrice, callbackRate, workingType): 
+    def trailStopOrder(self, symbol, side, quantity, activationPrice, callbackRate, workingType, positionSide='BOTH'): 
         query_string = urlencode({
                                 'symbol':symbol, 
                                 'side':side, 
+                                'positionSide':positionSide,
                                 'type':'TRAILING_STOP_MARKET',
                                 'timeInForce':'GTC', 
                                 'quantity':quantity,
@@ -340,52 +377,31 @@ class Binance:
         return response.json()
 
     def closeCurrentPositions(self, symbol):
-        query_string = urlencode({
-                            'symbol':symbol
-                            })
-        query_string = query_string.replace('%27', '%22')                                           
-        if query_string:
-            query_string = "{}&timestamp={}".format(query_string, self.get_timestamp())
-        else:
-            query_string = 'timestamp={}'.format(self.get_timestamp())
-        url = self.FUTURES_URL + '/fapi/v2/positionRisk?' + query_string + '&signature=' + self.hashing(self.secretKey,query_string)
-        response = self.dispatch_request(self.apiKey,'GET')(url=url)
-        res      = response.json()[0]
-        side     = float(res['positionAmt'])
-        positionAmt = str(abs(float(res['positionAmt'])))
-        if float(positionAmt) != 0.0:
-            if side>0:
-                query_string = urlencode({
-                                'symbol':symbol, 
-                                'side':'SELL', 
-                                'type':'MARKET', 
-                                'quantity':positionAmt
-                                })
-                query_string = query_string.replace('%27', '%22')                                           
-                if query_string:
-                    query_string = "{}&timestamp={}".format(query_string, self.get_timestamp())
-                else:
-                    query_string = 'timestamp={}'.format(self.get_timestamp())
-                url = self.FUTURES_URL + '/fapi/v1/order?' + query_string + '&signature=' + self.hashing(self.secretKey,query_string)
-                response = self.dispatch_request(self.apiKey,'POST')(url=url)
-                response = response.json()
-            elif side<0:
-                query_string = urlencode({
-                                'symbol':symbol, 
-                                'side':'BUY', 
-                                'type':'MARKET', 
-                                'quantity':positionAmt
-                                })
-                query_string = query_string.replace('%27', '%22')                                           
-                if query_string:
-                    query_string = "{}&timestamp={}".format(query_string, self.get_timestamp())
-                else:
-                    query_string = 'timestamp={}'.format(self.get_timestamp())
-                url = self.FUTURES_URL + '/fapi/v1/order?' + query_string + '&signature=' + self.hashing(self.secretKey,query_string)
-                response = self.dispatch_request(self.apiKey,'POST')(url=url)
-                response = response.json()
-            return response
-        return "No position was taken."
+        res      = self.currentPositions(symbol)
+        if len(res)==1:
+            res      = res[0]
+            side     = float(res['positionAmt'])
+            positionAmt = str(abs(float(res['positionAmt'])))
+            if float(positionAmt) != 0.0:
+                if side>0:
+                    response = self.marketOrder(symbol, 'SELL', positionAmt)
+                elif side<0:
+                    response = self.marketOrder(symbol, 'BUY', positionAmt)
+
+        elif len(res)==2:
+            long_position = res[0]
+            short_position= res[1]
+
+            long_amount = str(abs(float(long_position['positionAmt'])))
+            short_amount = str(abs(float(short_position['positionAmt'])))
+
+            if float(long_amount) != 0.0:
+                response_long = self.marketOrder(symbol, 'SELL', long_amount, 'LONG')
+                response['long'] = response_long
+            if float(short_amount) != 0.0:
+                response_short = self.marketOrder(symbol, 'BUY', short_amount, 'SHORT')
+                response['short'] = response_short
+        return response
 
     def changeMarginType(self, symbol, marginType): 
         query_string = urlencode({
@@ -447,14 +463,88 @@ class Binance:
     #     response = self.dispatch_request(self.apiKey,'GET')(url=url)
     #     return response.json()
 
+    def is_hedge(self, ):                                          
+        query_string = 'timestamp={}'.format(self.get_timestamp())
+        url = self.FUTURES_URL + '/fapi/v1/positionSide/dual?' + query_string + '&signature=' + self.hashing(self.sec,query_string)
+        response = self.dispatch_request(self.apiKey,'GET')(url=url)
+        return response.json()['dualSidePosition']
+
+    def setUsersConfig(self, symbol, user_leverage, user_marginType):
+        self.changeLeverage(symbol, user_leverage)
+        self.changeMarginType(symbol, user_marginType)
+
+    def setUsersPositionMode(self, user_position_mode):
+        if user_position_mode == 'Hedge':
+            position_mode = True
+            positionMode = 'true'
+        elif user_position_mode == 'One-way':
+            position_mode = False
+            positionMode = 'false'
+        dualSidePosition_status = self.is_hedge()
+        if dualSidePosition_status != position_mode:
+            self.dualSidePosition(positionMode)
+
+    def setStratConfig(self, symbol, strat_leverage, strat_marginType):
+        self.changeLeverage(symbol, strat_leverage)
+        self.changeMarginType(symbol, strat_marginType)
+
+    def setStratPositionMode(self,):
+        if self.strat_position_mode == 'Hedge':
+            position_mode = True
+            positionMode = 'true'
+        elif self.strat_position_mode == 'One-way':
+            position_mode = False
+            positionMode = 'false'
+        dualSidePosition_status = self.is_hedge()
+        if dualSidePosition_status != position_mode:
+            self.dualSidePosition(positionMode)
+    
+    def markPrice(self, symbol):
+        url = self.FUTURES_URL + '/fapi/v1/premiumIndex?'
+        params = {'url': url, 'params': {'symbol':symbol}}
+        response = self.dispatch_request(self.apiKey,'GET')(**params)
+        return float(response.json()['markPrice'])
+
+    def computeSize(self, symbol, quantity, size):
+        # print(self.size)
+        # print(self.markPrice(symbol))
+        quantity = ((float(quantity.replace("%",""))/100)*size)/self.markPrice(symbol)
+        return str(round(quantity,3))
+
+    def multiassetmode(self,):
+        query_string = 'timestamp={}'.format(self.get_timestamp())
+        url = self.FUTURES_URL + '/fapi/v1/multiAssetsMargin?' + query_string + '&signature=' + self.hashing(self.sec,query_string)
+        response = self.dispatch_request(self.apiKey,'GET')(url=url)
+        response = response.json()
+
+        return response
+
+    def historical_transfer(self, start_time, end_time):    
+        query_string = 'startTime={}&endTime={}&timestamp={}'.format(start_time, end_time, self.get_timestamp())
+        url = self.FUTURES_URL + '/fapi/v1/income?' + query_string + '&signature=' + self.hashing(self.secretKey, query_string)
+        response = self.dispatch_request(self.apiKey,'GET')(url=url)
+        return response.json()
+
 
 if __name__=="__main__":
     import time
     # salehi
     # QshYWMcOFx1O2x2B1n204M02fl0ZY1vcMd4O9NoZOWuBVQCLitFI8DSpYW2ZN4JD
-    # ZCDaDR57ncZGDDxxrIxlqGGwu5qgqKZz8mjACdD67ROnfdWdOMGdW22LOnR10u4P
-    apiKey    = "QshYWMcOFx1O2x2B1n204M02fl0ZY1vcMd4O9NoZOWuBVQCLitFI8DSpYW2ZN4JD"
-    secretKey = "ZCDaDR57ncZGDDxxrIxlqGGwu5qgqKZz8mjACdD67ROnfdWdOMGdW22LOnR10u4P"
+    # # ZCDaDR57ncZGDDxxrIxlqGGwu5qgqKZz8mjACdD67ROnfdWdOMGdW22LOnR10u4P
+    # apiKey    = "QshYWMcOFx1O2x2B1n204M02fl0ZY1vcMd4O9NoZOWuBVQCLitFI8DSpYW2ZN4JD"
+    # secretKey = "ZCDaDR57ncZGDDxxrIxlqGGwu5qgqKZz8mjACdD67ROnfdWdOMGdW22LOnR10u4P"
+    # # dodgekhosh
+    # apiKey    = "3uvdgQo4TBFllXr5eUZ1rQ3hZpkUJSc3HjyOmE0PTXIdMJMv1DYbo3en6PsBoIge"
+    # secretKey = "3yJejUdKXs4WKAJd9dgJ682VzIAVoszETLJC55GQlCgpwTYEf10tqZlyKFs77JrT"
+
+    #adel testnet
+    apiKey    = "8d5d93d1d19f29416b88dbfd2de113bdaff69dfc816e2dd227e0babe04f30b4e"
+    secretKey = "b90374fb93a30fd8254d583015e26a291153934afacde3607de820361277fe27"
+    
+    apiKey    = "aWJZ533J0ty18hBdUHHBKp5AOKvq2jXeWyP3m8WrWbyGJ8jBq9cvix1TlJQTxRtA"
+    secretKey = "QhNUo82PM9CnZxLVDP27bcODdYPZY0sUQPCHgcQS0nq4qo06r3gcVSYnd00FvBwn"
+    
+    
     bin = Binance(apiKey, secretKey)
     # res = bin.lastTrades(symbol='BTCUSDT',limit=50)
     # total_pnl = 0
@@ -462,10 +552,12 @@ if __name__=="__main__":
     #     temp = float(item['realizedPnl']) - float(item['commission'])
     #     total_pnl += temp
     # print(total_pnl)
-
+    # pprint(bin.futuresBalance()[6]['balance'])
     # print(res)
-    pprint(bin.futuresBalance()[6]['balance'])
-    # pprint(res)
-
-
-
+    # res = bin.spotBalance()['balances']
+    # for item in res:
+    #     if float(item['free']) > 0 or float(item['locked']) > 0:
+    #         print(item)
+    # res = bin.marketOrder('BTCUSDT', 'BUY', 0.01, positionSide='BOTH')
+    res = bin.currentOrders('BTCUSDT')
+    print(res)
