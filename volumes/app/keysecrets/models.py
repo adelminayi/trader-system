@@ -39,6 +39,7 @@ class Secret(models.Model):
                         decrypt(self.apiKey, APIKEYPASS), 
                         decrypt(self.secretKey, SECKEYPASS)
                 )
+                print('*********************\n' ,binance.futuresBalance(), '\n*************')
                 balance = float(binance.futuresBalance()[6]['balance'])
                 print('balance keysecrets model: ', balance)
                 # walletbalance = WalletBalance(

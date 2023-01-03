@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 # from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import NotAcceptable
 
 from binanceAPI.restapi import Binance
@@ -25,18 +25,7 @@ SECKEYPASS = os.getenv('SECKEYPASS')
 
 
 class UserStrategyView(viewsets.GenericViewSet):
-    """
-    strategy-panel items
-    get/list-post-patch-delete
-    LIST:
-        /userstrategy/
-    POST:
-        /userstrategy/<secret_id>/
-    GET/PATCH/DELETE:
-        /userstrategy/<UserStrategy_id>/
-    """
-    # authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     serializer_class = UserStrategySerializer
 
     def get_queryset(self, id=None):
@@ -67,13 +56,33 @@ class UserStrategyView(viewsets.GenericViewSet):
         return Response(serializer.data)
 
     def create(self, request, id):
+        """
+        {
+    "strategy":"D Surfer (TRX)",
+    "symbols":["XRPUSDT", "ETHUSDT"],
+    "margin":50,
+    "size":30,
+    "totallSL":5,
+    "risk":5,
+    "baseCurrency":"USDT",
+    "leverage":1,
+    "marginType":"ISOLATED",
+    "positionMode":"One-way",
+    "timeInForce":"GTC",
+    "workingType":"CONTRACT_PRICE",
+    "priceProtect":"TRUE",
+    "secret":1,
+    "isActive":true}
+    """
+
         data = request.data
         data['secret'] = self.get_queryset(id=id)
         serializer = self.get_serializer(data=data)
-        # print('\ndata :', data, '\n')
+        print('\ndata----------- :', data, '---------\n')
+        print('\nserializer +++++++++++:', serializer, '+++++++++++\n')
         if serializer.is_valid():
             if data['isActive']==True and \
-                UserStrategy.objects.filter(secret=data['secret'], symbol=data['symbol'], isActive=True).count()>0:
+                UserStrategy.objects.filter(secret=data['secret'], symbols=data['symbols'], isActive=True).count()>0:
                 raise NotAcceptable(detail="Two strategies on same secret and symbol are not acceptable!", code=406)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)

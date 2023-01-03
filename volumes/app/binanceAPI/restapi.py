@@ -529,8 +529,6 @@ class Binance:
 if __name__=="__main__":
     import time
     # salehi
-    # QshYWMcOFx1O2x2B1n204M02fl0ZY1vcMd4O9NoZOWuBVQCLitFI8DSpYW2ZN4JD
-    # # ZCDaDR57ncZGDDxxrIxlqGGwu5qgqKZz8mjACdD67ROnfdWdOMGdW22LOnR10u4P
     # apiKey    = "QshYWMcOFx1O2x2B1n204M02fl0ZY1vcMd4O9NoZOWuBVQCLitFI8DSpYW2ZN4JD"
     # secretKey = "ZCDaDR57ncZGDDxxrIxlqGGwu5qgqKZz8mjACdD67ROnfdWdOMGdW22LOnR10u4P"
     # # dodgekhosh
@@ -538,11 +536,12 @@ if __name__=="__main__":
     # secretKey = "3yJejUdKXs4WKAJd9dgJ682VzIAVoszETLJC55GQlCgpwTYEf10tqZlyKFs77JrT"
 
     #adel testnet
-    apiKey    = "8d5d93d1d19f29416b88dbfd2de113bdaff69dfc816e2dd227e0babe04f30b4e"
-    secretKey = "b90374fb93a30fd8254d583015e26a291153934afacde3607de820361277fe27"
+    # apiKey    = "8d5d93d1d19f29416b88dbfd2de113bdaff69dfc816e2dd227e0babe04f30b4e"
+    # secretKey = "b90374fb93a30fd8254d583015e26a291153934afacde3607de820361277fe27"
     
-    apiKey    = "aWJZ533J0ty18hBdUHHBKp5AOKvq2jXeWyP3m8WrWbyGJ8jBq9cvix1TlJQTxRtA"
-    secretKey = "QhNUo82PM9CnZxLVDP27bcODdYPZY0sUQPCHgcQS0nq4qo06r3gcVSYnd00FvBwn"
+    # danial torabi
+    apiKey    = "5Ywtzw164J48nIg6l4mFyLNyqjv8P3sR73mD3ZMjHvkzNShYtL65zzGTDyBEXnd1"
+    secretKey = "F2aNvJWp38GUATmPEnro9Nwm6rInvtEpD7llQXslDau70AkZ6Mi5Pr6eLY9lYxvi"
     
     
     bin = Binance(apiKey, secretKey)
@@ -552,12 +551,14 @@ if __name__=="__main__":
     #     temp = float(item['realizedPnl']) - float(item['commission'])
     #     total_pnl += temp
     # print(total_pnl)
-    # pprint(bin.futuresBalance()[6]['balance'])
+    pprint(bin.futuresBalance()[6]['balance'])
+    # pprint(bin.spotBalance())
     # print(res)
     # res = bin.spotBalance()['balances']
     # for item in res:
     #     if float(item['free']) > 0 or float(item['locked']) > 0:
     #         print(item)
     # res = bin.marketOrder('BTCUSDT', 'BUY', 0.01, positionSide='BOTH')
-    res = bin.currentOrders('BTCUSDT')
-    print(res)
+    # res = bin.lastTrades(symbol='LTCUSDT', limit=1000)
+    # pprint(res)
+    # print(bin.currentOrders('LTCUSDT'))

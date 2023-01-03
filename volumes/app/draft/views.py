@@ -2,13 +2,14 @@ from django.shortcuts import render
 from django.contrib.auth.models import User
 
 from rest_framework.views import APIView
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import permissions, status
 from rest_framework import serializers
 
-from .models import Person
+from .models import Person, Coin, BuyAndSell
 
-from .serializers import PersonSerializer
+from .serializers import PersonSerializer, CoinSerializer, BuyAndSellSerializer
 
 # Create your views here.
 class PreRegister(APIView):
@@ -75,3 +76,42 @@ class AllowRegister(APIView):
             return Response({'status': False})
 
 
+
+
+class CoinView(viewsets.ModelViewSet):
+    permission_classes=[permissions.AllowAny]
+    queryset = Coin.objects.all()
+    serializer_class = CoinSerializer
+
+class BuyAndSellView(APIView):
+    permission_classes=[permissions.AllowAny]
+    
+    def get(self, request, *args, **kwargs):
+        try:
+            id = request.query_params['mm']
+            print(id)
+            if id != None:
+                buysell_query = BuyAndSell.objects.get(id= id)
+                myserializer = BuyAndSellSerializer(buysell_query)
+        except:
+            buysell_query = BuyAndSell.objects.all()
+            # print('::::::::::::::::::',buysell_query)
+            myserializer = BuyAndSellSerializer(buysell_query, many=True)
+        
+        # print('::::::::::::::::::\n',myserializer,'\n::::::::::::::::::')
+        # for item in myserializer.data:
+        #     print(item['id'])
+        #     print(item['name'])
+        #     print(item['coin'])
+        # print(type(myserializer.data))
+        return Response(myserializer.data)
+    
+    def post(self, request):
+        serializer = BuyAndSellSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            print('serializer::::::::::::::::\n ',serializer)
+            print('request.data:::::::::::::\n ',request.data)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
